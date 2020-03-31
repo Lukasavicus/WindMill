@@ -1,0 +1,136 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+	<div class="container">
+		<section id="venv-mng">
+		<form method="POST" action="/packages">
+			<div class = "row">
+				<div class="form-group col-sm-6">
+					<label for="venvName">Name</label>
+					<input type="text" class="form-control" id="venvName" name="venvName" aria-describedby="venvName" placeholder="Enter venv name">
+					<small id="venvName" class="form-text text-muted">Enter the Virtual Enviroment name: etl-crm.</small>
+				</div>
+			</div>
+
+			<table class="table table-striped table-dark" >
+				<thead>
+					<th> Package Name </th>
+					<th> Specifier </th>
+					<th> Version </th>
+					<th> </th>
+					<th> </th>
+				</thead>
+				<tbody id='req-table-body'>
+					<tr>
+						<td>
+							<input type="text" class="form-control" id="pkgName" name="pkgName0" aria-describedby="pkgName" placeholder="Package name">
+						</td>
+						<td>
+							<select class="form-control" name="pkgSpecifier0">
+								<option value="==">==</option>
+								<option value=">=">>=</option>
+								<option value="<="><=</option>
+								<option value="~=">~=</option>
+								<option value="!=">!=</option>
+							</select>
+						</td>
+						<td>
+							<input type="text" class="form-control" id="pkgVersion" name="pkgVersion0" aria-describedby="pkgVersion" placeholder="Package version">
+						</td>
+						<td><i class="far fa-plus-square" onclick="add(0)"></i></td>
+						<td><i class="far fa-minus-square" onclick="remove(0)"></i></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<input type=file value="Load Requirements" class="btn btn-primary" id="req_loader" multiple>
+			<output id="list"></output>
+
+			<input type=submit value=Submit class="btn btn-primary">
+		</form>
+		</section>
+		<script>
+			function handleFileSelect(evt) {
+				let req_table_body = document.querySelector("#req-table-body");
+				//Array.from(req_table_body.children).forEach((el) => req_table_body.removeChild(el));
+				const file = evt.target.files[0];
+				if (!file.type.match('text.*')) {
+					console.log("File doesn't match with txt");
+					return;
+				}
+				
+				let reader = new FileReader();
+
+				// Closure to capture the file information.
+				reader.onload = (function(fileobj) {
+					return function(e) {
+						//console.log("LOG: ", e, fileobj);
+						let data = e.target.result;
+						let requirements = [];
+						if(data){
+							requirements = data.split('\n');
+							requirements_dict = requirements.map((req) => {
+								let mtc = req.match(/==|>=|<=|~=|!=/);
+								if(mtc == null)
+									return null;
+								let requirement = {};
+								requirement['specifier'] = mtc[0];
+								requirement['pkg_name'] = req.substr(0, mtc['index']);
+								requirement['pkg_version'] = req.substr((mtc['index'] + 2));
+								return requirement;
+							})
+							.filter((req) => req);
+
+							console.log(requirements_dict);
+							let i = 0;
+							requirements_dict.forEach((req) => {
+								let row = req_table_body.insertRow(i++);
+								row.innerHTML = `
+									<td>
+										<input type="text" class="form-control" id="pkgName" name="pkgName${i}" aria-describedby="pkgName" placeholder="Package name" value=${req['pkg_name']}>
+									</td>
+									<td>
+										<select class="form-control" name="pkgSpecifier${i}">
+											<option value="==" ${ (req['specifier'] == "==") ? 'selected' : ''} >==</option>
+											<option value=">=" ${ (req['specifier'] == ">=") ? 'selected' : ''} >>=</option>
+											<option value="<=" ${ (req['specifier'] == "<=") ? 'selected' : ''} ><=</option>
+											<option value="~=" ${ (req['specifier'] == "~=") ? 'selected' : ''} >~=</option>
+											<option value="!=" ${ (req['specifier'] == "!=") ? 'selected' : ''} >!=</option>
+										</select>
+									</td>
+									<td>
+										<input type="text" class="form-control" id="pkgVersion" name="pkgVersion${i}" aria-describedby="pkgVersion" placeholder="Package version" value=${req['pkg_version']}>
+									</td>
+									<td><i class="far fa-plus-square" onclick="add(${i})"></i></td>
+									<td><i class="far fa-minus-square" onclick="remove(${i})"></i></td>
+								`;
+							});
+						}
+					};
+				})(file);
+
+				// Read in the file.
+				reader.readAsText(file);
+			}
+
+			document.getElementById('req_loader').addEventListener('change', handleFileSelect, false);
+
+			function add(row_idx){
+
+			}
+
+			function remove(row_idx){
+				if(row_idx == 0){
+
+				}
+			}
+		</script>
+		<style>
+			.thumb {
+				height: 75px;
+				border: 1px solid #000;
+				margin: 10px 5px 0 0;
+			}
+		</style>
+	</div>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+	<script src="{{ url_for('static', filename='script.js') }}"></script>
+    <div class="container">
+    	<section id="recover-jobs">
+    		<table class="table table-striped table-dark" id="jobs">
+    			<thead>
+    				<tr>
+    					<th scope="col" colspan="4">TASK INFO</th>
+    					<th scope="col" colspan="4">CRON</th>
+    					<th scope="col" colspan="7"></th>
+    				</tr>
+    			<tr>
+    				<th scope="col">ID</th>
+    				<th scope="col">NAME</th>
+    				<th scope="col">ENTRY POINT</th>
+    				<th scope="col">STARTED AT</th>
+    				<th scope="col">LAST RUN</th>
+    				<th scope="col">STATUS</th>
+    				<th scope="col">CRON PARAMS</th>
+    				<th scope="col"># RUNS</th>
+    				<th scope="col" colspan="7">TOOL PANEL</th>
+    			</tr>
+    			</thead>
+    			<tbody>
+    			<tr>
+    				<th scope="row">1</th>
+    				<td>ETL-Clientes</td>
+    				<td>clientes.py</td>
+    				<td>xx/xx/xxxx 00:00:00</td>
+    				<td>xx/xx/xxxx 00:00:00</td>
+    				<td>not running</td>
+    				<td>* * * * *</td>
+    				<td>0</td>
+    				<td><i onclick="alert('hey');" class="fa fa-play"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-stop"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-calendar"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-edit"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-trash"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-info"></i></td>
+
+    			</tr>
+    			<tr>
+    				<th scope="row">2</th>
+    				<td>ETL-Transacoes</td>
+    				<td>transacoes.py</td>
+    				<td>xx/xx/xxxx 00:00:00</td>
+    				<td>xx/xx/xxxx 00:00:00</td>
+    				<td>not running</td>
+    				<td>* * * * *</td>
+    				<td>0</td>
+    				<td><i onclick="alert('hey');" class="fa fa-play"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-stop"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-calendar"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-edit"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-trash"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-info"></i></td>
+
+
+    			</tr>
+    			<tr>
+    				<th scope="row">3</th>
+    				<td>ETL-VOPs</td>
+    				<td>vops.py</td>
+    				<td>xx/xx/xxxx 00:00:00</td>
+    				<td>xx/xx/xxxx 00:00:00</td>
+    				<td>not running</td>
+    				<td>* * * * *</td>
+    				<td>0</td>
+    				<td><i onclick="alert('hey');" class="fa fa-play"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-stop"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-calendar"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-edit"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-trash"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
+    				<td><i onclick="alert('hey');" class="fa fa-info"></i></td>
+    			</tr>
+    			{% for task in tasks %}
+    				<tr>
+    					<th scope="row">#</th>
+    					<td>{{task["name"]}}</td>
+    					<td>{{task["entry"]}}</td>
+    					<td>{{task["started_at"]}}</td>
+    					<td>{{task["last_run"]}}</td>
+    					<td>{{task["status"]}}</td>
+    					<td>{{task["cron"]}}</td>
+    					<td>{{task["no_runs"]}}</td>
+    					<td><i onclick='play({{task["id"]}})' class="fa fa-play"></i></td>
+    					<td><i onclick='stop({{task["id"]}})' class="fa fa-stop"></i></td>
+    					<td><i onclick='schedule({{task["id"]}})' class="fa fa-calendar"></i></td>
+    					<td><i onclick="alert('hey');" class="fa fa-edit"></i></td>
+    					<td><i onclick='drop({{task["id"]}});' class="fa fa-trash"></i></td>
+    					<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
+    					<td><i onclick='modal_info_click({{task["id"]}})' data-toggle="modal" data-target="#modal-info" class="fa fa-info"></i></td>
+    				</tr>
+    			{% endfor %}
+    		</tbody>
+    	</table>
+    	</section>
+    </div>
+
+    <div class="modal fade" id="modal-info" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modal-info-label">Task name</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="modal-info-body">
+    		  <p id="modal-info-para"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+    	<section id="create-jobs">
+    		<form method="POST" action="/api/tasks/">
+    			<div class = "row">
+    			
+    				<div class="form-group col-sm">
+    					<label for="taskName">Name</label>
+    					<input type="text" class="form-control" id="taskName" name="taskName" aria-describedby="taskName" placeholder="Enter task name">
+    					<small id="taskName" class="form-text text-muted">Enter the task name: etl-clients.</small>
+    				</div>
+    
+    				<div class="form-group col-sm">
+    					<label for="taskEntry">Entry-Point</label>
+    					<select class="form-control" id="taskEntry" name="taskEntry" onchange="load_select()" style="font-family:Arial, FontAwesome;">
+    				    </select>
+    					<small id="taskEntryBC" class="form-text text-muted">
+    						Current Dir.: 
+    						<nav aria-label="breadcrumb">
+    						    <ol class="breadcrumb" id="list-breadcrumb">
+    						        {% for local in locations %}
+    						            <li class="breadcrumb-item"><a href="{{local['path']}}">{{local['name']}}</a></li>
+    						        {% endfor %}
+    						        <!--
+    						        <li class="breadcrumb-item"><a href="#">Home</a></li>
+    						        <li class="breadcrumb-item"><a href="#">Library</a></li>
+    						        <li class="breadcrumb-item active" aria-current="page">Data</li>
+    						        -->
+    						    </ol>
+    						</nav>
+    					</small>
+    				</div>
+    			</div>
+    			
+    			<div class="row align-items-center">
+    				
+    				<div class="col-sm-6">
+    					<div class="form-group">
+    						<label for="datetimepicker1">Start at:</label>
+    						<div class="input-group date" id="datetimepicker1" data-target-input="nearest">
+    							<input id='datetimepicker1_input' name='datetimepicker1_input' type="text" class="form-control datetimepicker-input" data-target="#datetimepicker1"/>
+    							<div class="input-group-append" data-target="#datetimepicker1" data-toggle="datetimepicker">
+    								<div class="input-group-text"><i class="fa fa-calendar"></i></div>
+    							</div>
+    							<div class="input-group-append" data-target="#datetimepicker1" style='cursor: pointer;'>
+    								<div class="input-group-text" onclick="clear_value('datetimepicker1_input')"><i class="fa fa-minus-square"></i></div>
+    							</div>
+    						</div>
+    					</div>
+    				</div>
+
+
+    				<div class="col-sm-6">
+    					<div class="form-group">
+    						<label for="datetimepicker2">End at:</label>
+    						<div class="input-group date" id="datetimepicker2" data-target-input="nearest">
+    							<input id='datetimepicker2_input' name='datetimepicker2_input' type="text" class="form-control datetimepicker-input" data-target="#datetimepicker2"/>
+    							<div class="input-group-append" data-target="#datetimepicker2" data-toggle="datetimepicker">
+    								<div class="input-group-text"><i class="fa fa-calendar"></i></div>
+    							</div>
+    							<div class="input-group-append" data-target="#datetimepicker2" style='cursor: pointer;' onclick="clear_value('datetimepicker2_input')">
+    								<div class="input-group-text"><i class="fa fa-minus-square"></i></div>
+    							</div>
+    						</div>
+    					</div>
+    				</div>
+
+    			</div>
+
+    			<div class="row align-items-center">
+    				<div class="col-sm-1">
+    					<div class="form-group">
+    						<label for="taskCronValueHours">Hours</label>
+    						<input type="number" min=0 max=24 value=0 class="form-control" name="taskCronValueHours" id="taskCronValueHours">
+    					</div>
+    				</div>
+    				<div class="col-sm-1">
+    					<div class="form-group">
+    						<label for="taskCronValueMins">Mins</label>
+    						<input type="number" min=0 max=59 value=0 class="form-control" name="taskCronValueMins" id="taskCronValueMins">
+    					</div>
+    				</div>
+    				<div class="col-sm-1">
+    					<div class="form-group">
+    						<label for="taskCronValueSecs">Secs</label>
+    						<input type="number" min=0 max=59 value=0 class="form-control" name="taskCronValueSecs" id="taskCronValueSecs">
+    					</div>
+    				</div>
+    
+    				<div class="col-sm-2">
+    					<div class="custom-control custom-switch">
+    						<input type="checkbox" class="custom-control-input" id="customSwitch1">
+    						<label class="custom-control-label" for="customSwitch1">Schedule task</label>
+    					</div>
+    				</div>
+    			</div>
+    			<button type="submit" class="btn btn-primary">Submit</button>
+    		</form>
+    	</section>
+    </div>
+{% endblock %}

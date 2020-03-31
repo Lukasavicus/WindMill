@@ -1,0 +1,51 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+	<div class="container">
+		<section id="recover-jobs">
+	        <nav aria-label="breadcrumb">
+	            <ol class="breadcrumb">
+	                {% for local in locations %}
+	                    <li class="breadcrumb-item"><a href="{{local['path']}}">{{local['name']}}</a></li>
+	                {% endfor %}
+	            </ol>
+	        </nav>
+			<table class="table table-striped table-dark" id="jobs">
+				<thead>
+	                <tr>
+	                    <th scope="col">Path</th>
+	                    <th scope="col">folder/file</th>
+	                    <th scope="col"></th>
+	                </tr>
+				</thead>
+				<tbody>
+	            {% for file_info in files_info %}
+					<tr>
+	                    <td><a href="/fs/{{ file_info['path'] }}">{{ file_info['name'] }}</a></td>
+	                    <td>
+	                    	{% if file_info['file_folder_flag'] %}
+	                    		<i class="fas fa-folder"></i>
+	                    	{% else %}
+	                    		<i class="far fa-file-code"></i>
+	                    	{% endif %}
+	                	</td>
+	                	<td>
+		                	{% if isRoot %}
+		                    	<i onclick="delete_dir('{{file_info['path']}}');" style="cursor: pointer;" class="fa fa-trash"></i>
+		                    {% endif %}
+	                    </td>
+					</tr>
+	            {% endfor %}
+			</tbody>
+		</table>
+		</section>
+	</div>
+	<script type="text/javascript">
+		function delete_dir(path){
+			fetch(`/api/fs/${path}`, {
+				method: 'DELETE'
+			}).then(response => console.log(response.json()));
+			//window.location.href = '/fs';
+		}
+	</script>
+{% endblock %}

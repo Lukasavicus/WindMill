@@ -1,0 +1,15 @@
+https://flask.palletsprojects.com/en/1.1.x/quickstart/#rendering-templates
+
+https://thispointer.com/python-how-to-unzip-a-file-extract-single-multiple-or-all-files-from-a-zip-archive/
+
+https://thispointer.com/how-to-create-a-directory-in-python/
+
+https://hackersandslackers.com/flask-jinja-templates/
+
+https://alex.dzyoba.com/blog/python-import/
+
+https://medium.com/@saianupkumarp/apache-airflow-using-docker-along-with-the-authentication-caa3522111c4
+
+https://exploreflask.com/en/latest/views.html
+
+! https://stackoverflow.com/questions/2572582/return-a-list-of-imported-python-modules-used-in-a-script
