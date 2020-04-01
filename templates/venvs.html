@@ -1,0 +1,89 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+	<!-- Compiled and minified CSS -->
+	<!--
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/materialize/1.0.0/css/materialize_chips.css') }}">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<div class="container">
+		<section id="upload-scripts">
+			<div id="accordion">
+				{% for venv in venvs %}
+				<div >
+					<div class="form-row align-items-center">
+						<div class="card">
+							<div class="card-header" id="headingOne">
+								<div class = "row">
+
+									<div class="form-group col-sm-6">
+										<label for="venvName">Name</label>
+										<input type="text" class="form-control" id="venvName" name="venvName" aria-describedby="venvName" placeholder="Enter Venv name" value="{{ venv['name'] }}">
+									</div>
+
+									<div class="form-group col-sm-6">
+										<div class="chips chips-placeholder input-field">
+											{% for associated_archs in venv['associated_archives'] %}
+												<div class="chip">
+												    {{associated_archs}}
+												</div>
+											{% endfor %}
+											<input class="input" placeholder="+Tag">
+										</div>
+									</div>
+								</div>
+
+							    <h5 class="mb-0">
+							    	<button type="button" class="btn btn-primary">Save</button>
+									<button type="button" class="btn btn-primary">Delete</button>
+
+							    	<button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+							        	Show Packages
+							    	</button>
+								</h5>
+							</div>
+
+							<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+								<div class="card-body">
+									<div class="chips chips-placeholder input-field">
+										{% for pkg in venv['pkgs'] %}
+											<div class="chip">
+											    {{pkg['name']}}{{pkg['version']}}
+												<i class="close material-icons">&times</i>
+											</div>
+										{% endfor %}
+										<input class="input" id="9ff804d0-1b71-157c-d02c-ac3088dee994" placeholder="+Tag">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</section>
+		<script type="text/javascript">
+			document.addEventListener('DOMContentLoaded', function() {
+				var elems = document.querySelectorAll('.chips');
+				var instances = M.Chips.init(elems, options);
+			});
+
+			  // Or with jQuery
+
+			  //$('.chips').chips();
+
+			  /*
+			  $('.chips-placeholder').chips({
+			    placeholder: 'Enter a tag',
+			    secondaryPlaceholder: '+Tag',
+			  });
+			  */
+
+		</script>
+	</div>
+{% endblock %}

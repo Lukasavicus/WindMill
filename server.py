@@ -175,11 +175,11 @@ def running():
         return abort(404)
     except Exception as e:
         flash(e)
-        print(e, dir(e))
+        print("INTERNAL ERROR", e)
         return abort(500)
 
 
-@app.route('/api/task/<int:task_id>', methods=["DELETE"])
+@app.route('/api/task/<int:task_id>', methods=["DELETE", "GET"])
 def task(task_id):
     global tasks
     try:
@@ -193,7 +193,15 @@ def task(task_id):
                 return SUCCESS
             else:
                 return abort(404)
-            return abort(404)
+        elif(request.method == "GET"):
+            (_, task) = _filter_task_by_id_or_name(task_id)
+            if(task != None):
+                return jsonify({
+                    'id': task['id'], 'pid': task['pid'], 'name': task['name'], 'entry': task['entry'],
+                    'cron': task['cron'], 'status': task['status'], 'started_at': task['started_at']})
+            else:
+                return abort(404)
+        return abort(405)
     except Exception as e:
         flash(e)
         print("INTERNAL ERROR", e)
@@ -258,7 +266,7 @@ def dir_listing_api(req_path):
             return abort(404)
 
         if(request.method == "DELETE"):
-            assert req_path.count('/') == 0, "Selected path '{}' is not a root directory. Delete are allowed only in roots directories".format(req_path)
+            assert req_path.count('/') == 1, "Selected path '{}' is not a root directory. Delete are allowed only in roots directories".format(req_path)
             shutil.rmtree(os.path.join('uploads/', req_path))
             abs_path = BASE_DIR
 
@@ -286,7 +294,7 @@ def dir_listing_api(req_path):
         return jsonify ({'files_info' : files_info, 'locations' : locations})
     except Exception as e:
         flash(e)
-        print(e, dir(e))
+        print("INTERNAL ERROR", e)
         return abort(500)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -318,12 +326,10 @@ def home():
             for idx, task in enumerate(tasks):
                 tasks[idx]["status"] = "running" if(isAlive(task)) else "not running"
             print("GET")
-
         return render_template('running.html', tasks=tasks)
-
     except Exception as e:
         flash(e)
-        print(e, dir(e))
+        print("INTERNAL ERROR", e)
         return abort(500)
 
 @app.route('/task/play/<int:task_id>')
@@ -352,8 +358,8 @@ def schedule_task(task_id):
 
 # -----------------------------------------------------------------------------
 @app.route('/upload', methods=['GET', 'POST'])
-def upload_file():
-    if request.method == 'POST':
+def upload_file_():
+    if(request.method == 'POST'):
         # check if the post request has the file part
         if('file' not in request.files):
             #flash('No file part')
@@ -386,14 +392,22 @@ def upload_file():
             print('Finished')
             os.remove(full_filename)
 
-            return redirect( url_for('upload_file', filename=filename) ) #
-    return render_template('upload.html')
+            (files_info, locations, isRoot) = _dir_listing('')
+            return render_template('files.html', files_info=files_info, locations=locations, isRoot=isRoot)
+    elif(request.method == 'GET'):
+        (files_info, locations, isRoot) = _dir_listing('')
+        return render_template('files.html', files_info=files_info, locations=locations, isRoot=isRoot)
+    return abort(405)
 
 # -----------------------------------------------------------------------------
-@app.route('/fs', defaults={'req_path': ''})
-@app.route('/fs/<path:req_path>')
-def dir_listing(req_path):
-    BASE_DIR = './uploads/' #Users/vivek/Desktop
+
+def _get_root_archives_folders():
+    BASE_DIR = './uploads/'
+    root_folders = []
+    #for f in os.
+
+def _dir_listing(req_path):
+    BASE_DIR = './uploads/'
     # Joining the base and the requested path
     abs_path = os.path.join(BASE_DIR, req_path)
     print("REQ_PATH ", req_path, "ABS ", abs_path)
@@ -421,8 +435,16 @@ def dir_listing(req_path):
     for i, path_part in enumerate(path_parts):
         locations.append({'name' : path_part, 'path' : ('/fs/' + '/'.join(path_parts[:i+1]))})
 
-    isRoot = req_path == ''
+    #isRoot = req_path == ''
+    print("\n\n REQ>", req_path, "<\n\n")
+    isRoot = req_path.count('/') == 1
 
+    return (files_info, locations, isRoot)
+
+@app.route('/fs', defaults={'req_path': ''})
+@app.route('/fs/<path:req_path>')
+def dir_listing(req_path):
+    (files_info, locations, isRoot) = _dir_listing(req_path)
     return render_template('files.html', files_info=files_info, locations=locations, isRoot=isRoot)
 
 # -----------------------------------------------------------------------------
@@ -460,27 +482,44 @@ def packages():
                     else:
                         break
                     i += 1
-
             p = sub.Popen(["pipenv", "install", "-r", full_filename])
-
             return redirect('/') #render_template('running.html', tasks=tasks)
-        #elif(request.method == "GET"):
+        elif(request.method == "GET"):
+            print("GET")
+            BASE_DIR = './uploads/'
+            folders = os.listdir(BASE_DIR)
+            venvs = [{
+                'name' : folder,
+                'pkgs' : get_packages(os.path.join(BASE_DIR, folder)),
+                'associated_archives' : filter(lambda resource : os.path.isdir(os.path.join(BASE_DIR, folder, resource)) , os.listdir(os.path.join(BASE_DIR, folder)) )
+                } for folder in folders]
+
+            return render_template('venvs.html', venvs=venvs)#jsonify(venvs)
+
         return abort(404)
     except Exception as e:
         flash(e)
-        print(e, dir(e))
+        print("INTERNAL ERROR", e)
         return abort(500)
+
+def get_packages(foldername):
+    try:
+        pipfile = os.path.join(foldername, 'Pipfile.lock')
+        pkgs_data = {}
+        with open(pipfile) as json_file:
+            pkgs_data = json.load(json_file)
+
+        pkg_list = list(pkgs_data['default'].keys())
+        pkgs = [{'name' : pkg, 'version' : pkgs_data['default'][pkg]['version']} for pkg in pkg_list]
+    except Exception as e:
+        flash(e)
+        print("INTERNAL ERROR", e)
+        return None
+    return pkgs
 
 @app.route('/packages/venv')
 def packages_venv():
-    foldername = 'test' # should be a parameter
-    pipfile = os.path.join(foldername, 'Pipfile.lock')
-    pkgs_data = {}
-    with open(pipfile) as json_file:
-        pkgs_data = json.load(json_file)
-
-    pkg_list = list(pkgs_data['default'].keys())
-    pkgs = [{'name' : pkg, 'version' : pkgs_data['default'][pkg]['version']} for pkg in pkg_list]
+    pkgs = get_packages('test')
     
     return jsonify(pkgs)
 

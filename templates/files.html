@@ -14,7 +14,7 @@
 				<thead>
 	                <tr>
 	                    <th scope="col">Path</th>
-	                    <th scope="col">folder/file</th>
+	                    <th scope="col">Enviroment/Folder/File</th>
 	                    <th scope="col"></th>
 	                </tr>
 				</thead>
@@ -48,4 +48,22 @@
 			//window.location.href = '/fs';
 		}
 	</script>
+
+	<div class="container">
+		<section id="upload-scripts">
+			<form method="POST" enctype=multipart/form-data action="/upload">
+
+				<div class="form-group col-sm-7">
+				    <label for="venvName">Virtual Enviroment</label>
+				    <select type="text" class="form-control" id="venvName" name="venvName" aria-describedby="venvName" placeholder="Enter task name">
+
+				    </select>
+				</div>
+
+				<input type=file name=file>
+				<input type=submit value=Upload>
+			</form>
+		</section>
+		<script src="{{ url_for('static', filename='venv_script.js') }}"></script>
+	</div>
 {% endblock %}

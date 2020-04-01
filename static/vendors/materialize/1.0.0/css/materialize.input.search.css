@@ -1,0 +1,49 @@
+
+/* Search Field */
+.input-field input[type=search] {
+  display: block;
+  line-height: inherit;
+  -webkit-transition: .3s background-color;
+  transition: .3s background-color;
+}
+
+.nav-wrapper .input-field input[type=search] {
+  height: inherit;
+  padding-left: 4rem;
+  width: calc(100% - 4rem);
+  border: 0;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+}
+
+.input-field input[type=search]:focus:not(.browser-default) {
+  background-color: #fff;
+  border: 0;
+  -webkit-box-shadow: none;
+          box-shadow: none;
+  color: #444;
+}
+
+.input-field input[type=search]:focus:not(.browser-default) + label i,
+.input-field input[type=search]:focus:not(.browser-default) ~ .mdi-navigation-close,
+.input-field input[type=search]:focus:not(.browser-default) ~ .material-icons {
+  color: #444;
+}
+
+.input-field input[type=search] + .label-icon {
+  -webkit-transform: none;
+          transform: none;
+  left: 1rem;
+}
+
+.input-field input[type=search] ~ .mdi-navigation-close,
+.input-field input[type=search] ~ .material-icons {
+  position: absolute;
+  top: 0;
+  right: 1rem;
+  color: transparent;
+  cursor: pointer;
+  font-size: 2rem;
+  -webkit-transition: .3s color;
+  transition: .3s color;
+}

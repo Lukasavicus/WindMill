@@ -17,7 +17,7 @@
 
 		let path_to_fetch = base_path + path;
 
-		fetch(path_to_fetch)
+		return fetch(path_to_fetch)
 		.then(response => {
 		    if(response.ok)
 		        return response.json();
@@ -151,5 +151,60 @@ function clear_value(elmt){
 
 		req.open("GET", `/api/task/info/${data.arr[index].id}`);
 		req.send();
+	}
+
+/*
+taskName
+taskEntry
+datetimepicker1_input
+datetimepicker2_input
+taskCronValueHours
+taskCronValueMins
+taskCronValueSecs
+customSwitch1
+
+*/
+	function formatDate(date){
+		let res = {
+			"start-at": "",
+			"seconds": "",
+			"minutes": "",
+			"hours": "",
+			"end-at": ""
+		}
+
+		/* TODO funcao para formatar data */
+
+		return res;
+	}
+
+	function edit(task_id){
+		fetch(`/api/task/${task_id}`)
+		.then(response => response.json())
+		.then(task =>{
+			let form = document.querySelector("form");
+			let date = formatDate(task["cron"]);
+
+			form.querySelector("#taskName").value = task["name"];
+			form.querySelector("#datetimepicker1_input").value = date["start-at"];
+			form.querySelector("#datetimepicker2_input").value = date["end-at"];
+			form.querySelector("#taskCronValueSecs").value = date["seconds"];
+			form.querySelector("#taskCronValueMins").value = date["minutes"];
+			form.querySelector("#taskCronValueHours").value = date["hours"];
+			form.querySelector("#customSwitch1").checked = true;
+
+			let v = task["entry"].split("\\");
+			
+			let path = "/" + v[0];
+			let filename = v[1];
+
+			let entry = form.querySelector("#taskEntry");
+			get_paths(path).then(() =>
+				Array.from(entry.options).forEach(opt =>{
+					if(opt.value.search(filename) != -1)
+						opt.selected = true;
+				})
+			);
+		});
 	}
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

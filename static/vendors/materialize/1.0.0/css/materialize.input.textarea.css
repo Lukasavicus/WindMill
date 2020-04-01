@@ -1,0 +1,48 @@
+
+/* Textarea */
+textarea {
+  width: 100%;
+  height: 3rem;
+  background-color: transparent;
+}
+
+textarea.materialize-textarea {
+  line-height: normal;
+  overflow-y: hidden;
+  /* prevents scroll bar flash */
+  padding: .8rem 0 .8rem 0;
+  /* prevents text jump on Enter keypress */
+  resize: none;
+  min-height: 3rem;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+}
+
+.hiddendiv {
+  visibility: hidden;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  /* future version of deprecated 'word-wrap' */
+  padding-top: 1.2rem;
+  /* prevents text jump on Enter keypress */
+  position: absolute;
+  top: 0;
+  z-index: -1;
+}
+
+/* Autocomplete */
+.autocomplete-content li .highlight {
+  color: #444;
+}
+
+.autocomplete-content li img {
+  height: 40px;
+  width: 40px;
+  margin: 5px 15px;
+}
+
+/* Character Counter */
+.character-counter {
+  min-height: 18px;
+}

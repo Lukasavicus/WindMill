@@ -1,0 +1,69 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+	<!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+	<div class="container">
+		<section id="upload-scripts">
+			<table>
+				<thead>
+					<th>Virtual Enviroment Name</th>
+					<th>Packages</th>
+					<th> Archives Associates </th>
+					<th> </th>
+					<th> </th>
+				</thead>
+				<tbody>
+				{% for venv in venvs %}
+					<tr>
+						<td>{{ venv['name'] }}</td>
+						<td>
+							<div class="chips chips-placeholder input-field">
+								{% for pkg in venv['pkgs'] %}
+									<div class="chip">
+									    {{pkg['name']}}{{pkg['version']}}
+										<i class="close material-icons">&times</i>
+									</div>
+								{% endfor %}
+								<input class="input" id="9ff804d0-1b71-157c-d02c-ac3088dee994" placeholder="+Tag">
+							</div>
+						</td>
+						<td>
+							{% for associated_archs in venv['associated_archives'] %}
+								<div class="chip">
+								    {{associated_archs}}
+								</div>
+							{% endfor %}
+						</td>
+						<td><i class="far fa-save"></i></td>
+						<td><i class="fa fa-trash"></i></td>
+					</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+		</section>
+		<script type="text/javascript">
+			document.addEventListener('DOMContentLoaded', function() {
+				var elems = document.querySelectorAll('.chips');
+				var instances = M.Chips.init(elems, options);
+			});
+
+			  // Or with jQuery
+
+			  //$('.chips').chips();
+
+			  /*
+			  $('.chips-placeholder').chips({
+			    placeholder: 'Enter a tag',
+			    secondaryPlaceholder: '+Tag',
+			  });
+			  */
+
+		</script>
+	</div>
+{% endblock %}
