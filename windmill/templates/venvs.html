@@ -7,6 +7,7 @@
     -->
     <link rel="stylesheet" href="{{ url_for('static', filename='vendors/materialize/1.0.0/css/materialize_chips.css') }}">
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='venv_style.css') }}">
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
@@ -16,9 +17,9 @@
 			<div id="accordion">
 				{% for venv in venvs %}
 				<div >
-					<div class="form-row align-items-center">
+					<div class="form-row align-items-center venv">
 						<div class="card">
-							<div class="card-header" id="headingOne">
+							<div class="card-header" id="heading{{loop.index}}">
 								<div class = "row">
 
 									<div class="form-group col-sm-6">
@@ -42,13 +43,13 @@
 							    	<button type="button" class="btn btn-primary">Save</button>
 									<button type="button" class="btn btn-primary">Delete</button>
 
-							    	<button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+							    	<button class="btn btn-secondary" data-toggle="collapse" data-target="#collapse{{loop.index}}" aria-expanded="true" aria-controls="collapse{{loop.index}}">
 							        	Show Packages
 							    	</button>
 								</h5>
 							</div>
 
-							<div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+							<div id="collapse{{loop.index}}" class="collapse" aria-labelledby="heading{{loop.index}}" data-parent="#accordion">
 								<div class="card-body">
 									<div class="chips chips-placeholder input-field">
 										{% for pkg in venv['pkgs'] %}

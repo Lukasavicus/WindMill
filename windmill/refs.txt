@@ -15,3 +15,7 @@ https://exploreflask.com/en/latest/views.html
 ! https://stackoverflow.com/questions/2572582/return-a-list-of-imported-python-modules-used-in-a-script
 
 https://stackoverflow.com/questions/28613848/is-it-possible-to-integrate-materializecss-into-bootstrap
+
+!! https://github.com/italomaia/flask-empty
+!! https://exploreflask.com/en/latest/organizing.html
+! https://hackersandslackers.com/flask-blueprints/
