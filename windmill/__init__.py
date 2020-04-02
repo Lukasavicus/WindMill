@@ -39,4 +39,19 @@ def create_app(test_config=None):
     return app
 
 app = create_app()
-from windmill import routes
+
+#from windmill import routes
+
+from windmill.archives.routes import archives
+#from windmill.main.routes import main
+#from windmill.runs.routes import runs
+from windmill.tasks.routes import tasks
+from windmill.venvironments.routes import venvironments
+#from windmill.errors.handlers import errors
+
+app.register_blueprint(archives)
+#app.register_blueprint(main)
+#app.register_blueprint(runs)
+app.register_blueprint(tasks)
+app.register_blueprint(venvironments)
+#app.register_blueprint(errors)
