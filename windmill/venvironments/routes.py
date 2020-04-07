@@ -28,7 +28,7 @@ def _get_packages(foldername):
     """
     pkgs = []
     try:
-        print("TRYING ACCESS", foldername)
+        print("venvs", "TRYING ACCESS", foldername)
         pipfile = os.path.join(foldername, 'Pipfile.lock')
         pkgs_data = {}
         with open(pipfile) as json_file:
@@ -36,15 +36,15 @@ def _get_packages(foldername):
 
         pkg_list = list(pkgs_data['default'].keys())
 
-        print(divisor)
-        print("foldername", foldername, "pkgs_data", pkgs_data, "pkg_list", pkg_list)
-        print(divisor)
+        print("venvs", divisor)
+        print("venvs", "foldername", foldername, "pkgs_data", pkgs_data, "pkg_list", pkg_list)
+        print("venvs", divisor)
 
         if(len(pkg_list) > 0):
             pkgs = [{'name' : pkg, 'version' : pkgs_data['default'][pkg]['version']} for pkg in pkg_list]
     except Exception as e:
         flash(e)
-        print("INTERNAL ERROR", e)
+        print("venvs", "INTERNAL ERROR", e)
         return abort(404)
     return pkgs
 
@@ -68,8 +68,8 @@ def packages():
     trace('packages')
     try:
         if(request.method == "POST"):
-            print("POST")
-            print(request.form)
+            print("venvs", "POST")
+            print("venvs", request.form)
             venvName = request.form['venvName']
             foldername = secure_filename(venvName)
             full_foldername = os.path.join(app.config['UPLOAD_FOLDER'], foldername)
@@ -97,7 +97,7 @@ def packages():
             p = sub.Popen(["pipenv", "install", "-r", full_filename], cwd=full_foldername)
             return redirect('/') #render_template('running.html', tasks=tasks)
         elif(request.method == "GET"):
-            print("GET")
+            print("venvs", "GET")
             BASE_DIR = app.config['UPLOAD_FOLDER']
             folders = os.listdir(BASE_DIR)
             venvs = [{
@@ -109,13 +109,13 @@ def packages():
                         os.listdir(os.path.join(BASE_DIR, folder))
                     ))
                 } for folder in folders]
-            print("ARCHIVES", venvs)
+            print("venvs", "ARCHIVES", venvs)
             return render_template('venvs.html', venvs=venvs)#jsonify(venvs)
 
         return abort(404)
     except Exception as e:
         flash(e)
-        print("INTERNAL ERROR", e)
+        print("venvs", "INTERNAL ERROR", e)
         return abort(500)
 
 

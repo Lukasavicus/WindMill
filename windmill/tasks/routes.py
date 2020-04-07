@@ -14,7 +14,7 @@ import os
 import subprocess as sub
 from datetime import datetime
 
-from windmill.main.utils import trace, divisor
+from windmill.main.utils import trace, divisor, __resolve_path, MsgTypes
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === globals and config ======================================================
@@ -47,68 +47,72 @@ def isAlive(task):
 def _play_task(task_id):
     global TASKS
     try:
-        print(divisor)
-        print("PLAY invoked ", task_id)
-        print(divisor)
+        print("tasks", divisor)
+        print("tasks", "PLAY invoked ", task_id)
+        print("tasks", divisor)
         (_, task) = _filter_task_by_id_or_name(task_id)
-        print("PLAY> ", task)
+        print("tasks", "PLAY> ", task)
 
         if(task != None):
-            print(divisor)
-            print(app.config['python_cmd'] + " ", os.path.join(app.config['UPLOAD_FOLDER'], task["entry"]))
-            print(divisor)
+            print("tasks", divisor)
+            print("tasks", app.config['python_cmd'] + " ", os.path.join(app.config['UPLOAD_FOLDER'], task["entry"]))
+            print("tasks", divisor)
             log = open((task["name"]+'.txt'), 'a')  # so that data written to it will be appended
             #p = sub.Popen(['python3 ', (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"]))], stdout=log)
             p = sub.Popen([(app.config['python_cmd'] + ' '), (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"]))], stdout=log)
             TASKS[task_id]["pointer"] = p
             TASKS[task_id]["pid"] = p.pid
             TASKS[task_id]["status"] = "running"
-            print("EXECUTING .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
+            print("tasks", "EXECUTING .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
+            print("tasks", divisor)
+            print("tasks", "SUCESS ", app.config['SUCCESS'])
+            flash({'title' : "Task Action", 'msg' : "Task id:{} is now running".format(str(task['id'])), 'type' : MsgTypes['SUCCESS']})
             return app.config['SUCCESS']
         else:
             return abort(404)
     except Exception as e:
-        flash(e)
-        print("INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
 def _stop_task(task_id):
     global TASKS
     try:
-        print("STOP invoked")
+        print("tasks", "STOP invoked")
         (_, task) = _filter_task_by_id_or_name(task_id)
 
         if(task != None):
             TASKS[task_id]["pointer"].kill()
             TASKS[task_id]["status"] = "not active"
-            print("KILLING .. ", task["entry"])
+            print("tasks", "KILLING .. ", task["entry"])
+            flash({'title' : "Task Action", 'msg' : "Task id:{} is now stopped".format(str(task['id'])), 'type' : MsgTypes['SUCCESS']})
             return app.config['SUCCESS']
         else:
             return abort(404)
     except Exception as e:
-        flash(e)
-        print("INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
 def _schedule_task(task_id):
     global TASKS
     try:
-        print("SCHEDULE invoked")
+        print("tasks", "SCHEDULE invoked")
         (_, task) = _filter_task_by_id_or_name(task_id)
 
         if(task != None):
-            print("task is not None")
+            print("tasks", "task is not None")
             p = sub.Popen([(app.config['python_cmd'] + ' '), '.\executor.py', (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])), "seconds", "90"])
             TASKS[task_id]["pointer"] = p
             TASKS[task_id]["pid"] = p.pid
             TASKS[task_id]["status"] = "running (schdl)"
-            print("SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
+            print("tasks", "SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
             return app.config['SUCCESS']
         else:
             return abort(404)
     except Exception as e:
-        flash(e)
-        print("INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -118,14 +122,14 @@ def running():
     global TASKS
     try:
         if(request.method == "POST"):
-            print("POST")
-            print(request.form)
+            print("tasks", "running - POST")
+            print("tasks", request.form)
 
             TASKS.append({
                     "id" : str(len(TASKS)),
                     "pid" : None,
                     "name" : request.form['taskName'],
-                    "entry" : request.form['taskEntry'],
+                    "entry" : __resolve_path(request.form['taskEntry']),
                     "cron" : "{} {} {} {} {}".format(
                         '/s' if request.form['datetimepicker1_input'] else '-',
                         request.form['taskCronValueHours'],
@@ -137,9 +141,10 @@ def running():
                     "status" : "not running",
                     "started_at" : datetime.now().strftime("%Y-%d-%m %H:%M:%S")
                 })
-            return redirect('/') #render_template('running.html', TASKS=TASKS)
+            flash({ 'title' : "Task", 'msg' : "Task {} created with id: {}.".format(str(TASKS[-1]['name']), str(TASKS[-1]['id'])), 'type' : MsgTypes['SUCCESS'] })
+            return redirect('/') #render_template('running.html', tasks=TASKS)
         elif(request.method == "GET"):
-            print("GET")
+            print("tasks", "running - GET")
             for idx, task in enumerate(TASKS):
                 TASKS[idx]["status"] = "running" if(isAlive(task)) else "not running"
             return jsonify(list(map(lambda task : {
@@ -148,15 +153,15 @@ def running():
                 task['status'] != 'deleted' ,TASKS)))))
         return abort(404)
     except Exception as e:
-        flash(e)
-        print("INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
 @tasks.route('/api/task/<int:task_id>', methods=["DELETE", "GET"])
 def task(task_id):
     global TASKS
     try:
-        print("TASK -> ", request.method, " --> ", task_id)
+        print("tasks", "TASK -> ", request.method, " --> ", task_id)
         if(request.method == "DELETE"):
             (_, task) = _filter_task_by_id_or_name(task_id)
             if(task != None):
@@ -176,34 +181,35 @@ def task(task_id):
                 return abort(404)
         return abort(405)
     except Exception as e:
-        flash(e)
-        print("INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
 @tasks.route('/api/task/info/<int:task_id>')
 def info_task(task_id):
     global TASKS
     try:
-        print("INFO invoked")
+        print("tasks", "INFO invoked")
         (_, task) = _filter_task_by_id_or_name(task_id)
         data = ""
         if(task != None):
-            print("task is not None")
+            print("tasks", "task is not None")
             with open((task["name"]+'.txt'), 'r') as task_file:
                 data = task_file.read()
             return jsonify(data)
         else:
             return abort(404)
     except Exception as e:
-        flash(e)
-        print("INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
 @tasks.route('/api/task/play/<int:task_id>')
 def api_play_task(task_id):
     ans = _play_task(task_id)
+    print("tasks", "PLAY return", ans, app.config['SUCCESS'], ans == app.config['SUCCESS'])
     if(ans == app.config['SUCCESS']):
-        jsonify(success=True)
+        return jsonify(success=True)
     else:
         return ans
 
@@ -211,7 +217,7 @@ def api_play_task(task_id):
 def api_stop_task(task_id):
     ans = _stop_task(task_id)
     if(ans == app.config['SUCCESS']):
-        jsonify(success=True)
+        return jsonify(success=True)
     else:
         return ans
 
@@ -219,7 +225,7 @@ def api_stop_task(task_id):
 def api_schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):
-        jsonify(success=True)
+        return jsonify(success=True)
     else:
         return ans
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -232,37 +238,41 @@ def home():
     error = ''
     try:
         if(request.method == "POST"):
-            print("POST")
-            print(request.form)
+            print("tasks", "home-POST")
+            print("tasks", request.form)
 
             TASKS.append({
                     "id" : str(len(TASKS)),
                     "pid" : None,
                     "name" : request.form['taskName'],
-                    "entry" : request.form['taskEntry'],
+                    "entry" : __resolve_path(request.form['taskEntry']),
                     "cron" : None,
                     "pointer" : None,
                     "status" : "not running",
                     "no_runs" : 0,
                     "started_at" : datetime.now().strftime("%Y-%d-%m %H:%M:%S")
                 })
-            print(TASKS)
-
+            flash({'title' : "Task", 'msg' : "Task {} created with id: {}.".format(str(TASKS[-1]['name']), str(TASKS[-1]['id'])), 'type' : MsgTypes['SUCCESS']})
+            print("tasks", TASKS)
         elif(request.method == "GET"):
             for idx, task in enumerate(TASKS):
                 TASKS[idx]["status"] = "running" if(isAlive(task)) else "not running"
-            print("GET")
-        return render_template('running.html', TASKS=TASKS)
+            print("tasks", "home-GET")
+
+        print("tasks", divisor)
+        print("tasks", " --> TASKS", TASKS)
+        print("tasks", divisor)
+        return render_template('running.html', tasks=TASKS)
     except Exception as e:
-        flash(e)
-        print("INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
 @tasks.route('/task/play/<int:task_id>')
 def play_task(task_id):
     ans = _play_task(task_id)
     if(ans == app.config['SUCCESS']):
-        redirect('/')
+        return redirect('/')
     else:
         return ans
 
@@ -270,7 +280,7 @@ def play_task(task_id):
 def stop_task(task_id):
     ans = _stop_task(task_id)
     if(ans == app.config['SUCCESS']):
-        redirect('/')
+        return redirect('/')
     else:
         return ans
 
@@ -278,7 +288,7 @@ def stop_task(task_id):
 def schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):
-        redirect('/')
+        return redirect('/')
     else:
         return ans
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

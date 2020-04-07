@@ -24,7 +24,11 @@
 	                    <td><a href="/fs/{{ file_info['path'] }}">{{ file_info['name'] }}</a></td>
 	                    <td>
 	                    	{% if file_info['file_folder_flag'] %}
-	                    		<i class="fas fa-folder"></i>
+	                    		{% if folderEnv %}
+	                    			<i class="fas fa-globe"></i>
+	                    		{% else %}
+	                    			<i class="fas fa-folder"></i>
+	                    		{% endif %}
 	                    	{% else %}
 	                    		<i class="far fa-file-code"></i>
 	                    	{% endif %}

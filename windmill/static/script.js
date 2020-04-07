@@ -38,6 +38,7 @@
 		
 		const folder_icon = '';
 		const file_icon = '';
+		const file_env = '';
 
 		let icon = '';
 
@@ -87,6 +88,7 @@
 
 	get_paths();
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 fetch("/api/tasks/")
 	.then(response => {

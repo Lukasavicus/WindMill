@@ -24,63 +24,9 @@
     			</tr>
     			</thead>
     			<tbody>
-    			<tr>
-    				<th scope="row">1</th>
-    				<td>ETL-Clientes</td>
-    				<td>clientes.py</td>
-    				<td>xx/xx/xxxx 00:00:00</td>
-    				<td>xx/xx/xxxx 00:00:00</td>
-    				<td>not running</td>
-    				<td>* * * * *</td>
-    				<td>0</td>
-    				<td><i onclick="alert('hey');" class="fa fa-play"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-stop"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-calendar"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-edit"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-trash"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-info"></i></td>
-
-    			</tr>
-    			<tr>
-    				<th scope="row">2</th>
-    				<td>ETL-Transacoes</td>
-    				<td>transacoes.py</td>
-    				<td>xx/xx/xxxx 00:00:00</td>
-    				<td>xx/xx/xxxx 00:00:00</td>
-    				<td>not running</td>
-    				<td>* * * * *</td>
-    				<td>0</td>
-    				<td><i onclick="alert('hey');" class="fa fa-play"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-stop"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-calendar"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-edit"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-trash"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-info"></i></td>
-
-
-    			</tr>
-    			<tr>
-    				<th scope="row">3</th>
-    				<td>ETL-VOPs</td>
-    				<td>vops.py</td>
-    				<td>xx/xx/xxxx 00:00:00</td>
-    				<td>xx/xx/xxxx 00:00:00</td>
-    				<td>not running</td>
-    				<td>* * * * *</td>
-    				<td>0</td>
-    				<td><i onclick="alert('hey');" class="fa fa-play"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-stop"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-calendar"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-edit"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-trash"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
-    				<td><i onclick="alert('hey');" class="fa fa-info"></i></td>
-    			</tr>
     			{% for task in tasks %}
     				<tr>
-    					<th scope="row">#</th>
+    					<th scope="row">{{ task["id"] }}</th>
     					<td>{{task["name"]}}</td>
     					<td>{{task["entry"]}}</td>
     					<td>{{task["started_at"]}}</td>
@@ -99,6 +45,12 @@
     			{% endfor %}
     		</tbody>
     	</table>
+        {% if tasks|length == 0 %}
+            <div class="alert alert-dark" role="alert">
+                No Jobs created !
+            </div>
+        {% else %}
+        {% endif %}
     	</section>
     </div>
 
@@ -143,11 +95,6 @@
     						        {% for local in locations %}
     						            <li class="breadcrumb-item"><a href="{{local['path']}}">{{local['name']}}</a></li>
     						        {% endfor %}
-    						        <!--
-    						        <li class="breadcrumb-item"><a href="#">Home</a></li>
-    						        <li class="breadcrumb-item"><a href="#">Library</a></li>
-    						        <li class="breadcrumb-item active" aria-current="page">Data</li>
-    						        -->
     						    </ol>
     						</nav>
     					</small>
