@@ -1,3 +1,6 @@
+
+let ACTION_FORM = "POST";
+
 // === GLOBALS ====================================================
 	let data = {arr:[]};
 
@@ -89,27 +92,43 @@
 	get_paths();
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+// === USEFULL ====================================================
+	fetch("/api/tasks/")
+		.then(response => {
+			if(response.ok){
+				return response.json();
+			}
+			throw new Error(response);
+		})
+		.then(received_data => data_proxy.arr = received_data);
 
-fetch("/api/tasks/")
-	.then(response => {
-		if(response.ok){
-			return response.json();
+	$(function () {
+		$('#datetimepicker1').datetimepicker();
+	});
+
+	$(function () {
+		$('#datetimepicker2').datetimepicker();
+	});
+
+	function clear_value(elmt){
+		document.querySelector(`#${elmt}`).value = "";
+	}
+
+	document.querySelector("#submit-button").addEventListener('click', function(event){
+		alert('intercepted', ACTION_FORM);
+		if(ACTION_FORM == "POST"){
+			console.log(this);
+			return true;
 		}
-		throw new Error(response);
-	})
-	.then(received_data => data_proxy.arr = received_data);
-
-$(function () {
-	$('#datetimepicker1').datetimepicker();
-});
-
-$(function () {
-	$('#datetimepicker2').datetimepicker();
-});
-
-function clear_value(elmt){
-	document.querySelector(`#${elmt}`).value = "";
-}
+		else{
+			event.preventDefault();
+			const task_id = document.querySelector("#taskId").value;
+			update(task_id);
+			ACTION_FORM = "POST";
+			return false;
+		}
+	});
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // === ACTIONS ====================================================
 
@@ -155,17 +174,16 @@ function clear_value(elmt){
 		req.send();
 	}
 
-/*
-taskName
-taskEntry
-datetimepicker1_input
-datetimepicker2_input
-taskCronValueHours
-taskCronValueMins
-taskCronValueSecs
-customSwitch1
-
-*/
+	/*
+		taskName
+		taskEntry
+		datetimepicker1_input
+		datetimepicker2_input
+		taskCronValueHours
+		taskCronValueMins
+		taskCronValueSecs
+		customSwitch1
+	*/
 	function formatDate(date){
 		let res = {
 			"start-at": "",
@@ -181,6 +199,9 @@ customSwitch1
 	}
 
 	function edit(task_id){
+		document.querySelector("#submit-button").innerText = "Update";
+		document.querySelector("#taskId").value = task_id;
+
 		fetch(`/api/task/${task_id}`)
 		.then(response => response.json())
 		.then(task =>{
@@ -195,7 +216,7 @@ customSwitch1
 			form.querySelector("#taskCronValueHours").value = date["hours"];
 			form.querySelector("#customSwitch1").checked = true;
 
-			let v = task["entry"].split("\\");
+			let v = task["entry"].split("/"); //\\
 			
 			let path = "/" + v[0];
 			let filename = v[1];
@@ -208,5 +229,22 @@ customSwitch1
 				})
 			);
 		});
+
+		ACTION_FORM = "PUT";
 	}
+
+	function update(task_id){
+		const form = document.querySelector("#form-task");
+
+		let formData = new FormData(form);
+
+		console.log(">>", formData);
+
+		fetch(`/api/task/${task_id}`, {
+			method: 'PUT',
+			body: formData
+
+		}).then(response => console.log(response.json()));
+	}
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

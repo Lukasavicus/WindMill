@@ -44,6 +44,45 @@ def isAlive(task):
 
 
 # === WRAPPED FUNCTIONS =======================================================
+def _tasks_handler(request):
+    global TASKS
+    try:
+        if(request.method == "POST"):
+            #print("tasks", "home-POST")
+            #print("tasks", request.form)
+            TASKS.append({
+                    "id" : str(len(TASKS)),
+                    "pid" : None,
+                    "name" : request.form['taskName'],
+                    "entry" : __resolve_path(request.form['taskEntry']),
+                    "cron" : None,
+                    "pointer" : None,
+                    "status" : "not running",
+                    "no_runs" : 0,
+                    "started_at" : datetime.now().strftime("%Y-%d-%m %H:%M:%S")
+                })
+            flash({'title' : "Task", 'msg' : "Task {} created with id: {}.".format(str(TASKS[-1]['name']), str(TASKS[-1]['id'])), 'type' : MsgTypes['SUCCESS']})
+            #print("tasks", TASKS)
+        elif(request.method == "GET"):
+            for idx, task in enumerate(TASKS):
+                TASKS[idx]["status"] = "running" if(isAlive(task)) else "not running"
+            #print("tasks", "home-GET")
+        
+        #print("tasks", divisor)
+        #print("tasks", " --> TASKS", TASKS)
+        #print("tasks", divisor)
+
+        tasks_to_return = list(map(lambda task : {
+                'id': task['id'], 'pid': task['pid'], 'name': task['name'], 'entry': task['entry'],
+                'cron': task['cron'], 'status': task['status'], 'started_at': task['started_at']}, list(filter(lambda task :
+                task['status'] != 'deleted' ,TASKS))))
+
+        return {'response' : app.config['SUCCESS'], 'data' : tasks_to_return}
+    except Exception as e:
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
+        return abort(500)
+
 def _play_task(task_id):
     global TASKS
     try:
@@ -64,11 +103,10 @@ def _play_task(task_id):
             TASKS[task_id]["pid"] = p.pid
             TASKS[task_id]["status"] = "running"
             print("tasks", "EXECUTING .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
-            print("tasks", divisor)
-            print("tasks", "SUCESS ", app.config['SUCCESS'])
             flash({'title' : "Task Action", 'msg' : "Task id:{} is now running".format(str(task['id'])), 'type' : MsgTypes['SUCCESS']})
             return app.config['SUCCESS']
         else:
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -88,6 +126,7 @@ def _stop_task(task_id):
             flash({'title' : "Task Action", 'msg' : "Task id:{} is now stopped".format(str(task['id'])), 'type' : MsgTypes['SUCCESS']})
             return app.config['SUCCESS']
         else:
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -109,6 +148,7 @@ def _schedule_task(task_id):
             print("tasks", "SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
             return app.config['SUCCESS']
         else:
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -118,67 +158,52 @@ def _schedule_task(task_id):
 
 # === API routes ==============================================================
 @tasks.route('/api/tasks/', methods=["GET","POST"])
-def running():
+def api_tasks():
     global TASKS
-    try:
-        if(request.method == "POST"):
-            print("tasks", "running - POST")
-            print("tasks", request.form)
+    ans = _tasks_handler(request)
+    if(ans['response'] == app.config['SUCCESS']):
+        return jsonify(ans['data'])
+    else:
+        return ans
 
-            TASKS.append({
-                    "id" : str(len(TASKS)),
-                    "pid" : None,
-                    "name" : request.form['taskName'],
-                    "entry" : __resolve_path(request.form['taskEntry']),
-                    "cron" : "{} {} {} {} {}".format(
-                        '/s' if request.form['datetimepicker1_input'] else '-',
-                        request.form['taskCronValueHours'],
-                        request.form['taskCronValueMins'],
-                        request.form['taskCronValueSecs'],
-                        '/e' if request.form['datetimepicker2_input'] else '-',
-                    ),
-                    "pointer" : None,
-                    "status" : "not running",
-                    "started_at" : datetime.now().strftime("%Y-%d-%m %H:%M:%S")
-                })
-            flash({ 'title' : "Task", 'msg' : "Task {} created with id: {}.".format(str(TASKS[-1]['name']), str(TASKS[-1]['id'])), 'type' : MsgTypes['SUCCESS'] })
-            return redirect('/') #render_template('running.html', tasks=TASKS)
-        elif(request.method == "GET"):
-            print("tasks", "running - GET")
-            for idx, task in enumerate(TASKS):
-                TASKS[idx]["status"] = "running" if(isAlive(task)) else "not running"
-            return jsonify(list(map(lambda task : {
-                'id': task['id'], 'pid': task['pid'], 'name': task['name'], 'entry': task['entry'],
-                'cron': task['cron'], 'status': task['status'], 'started_at': task['started_at']}, list(filter(lambda task :
-                task['status'] != 'deleted' ,TASKS)))))
-        return abort(404)
-    except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
-        print("tasks", "INTERNAL ERROR", e)
-        return abort(500)
-
-@tasks.route('/api/task/<int:task_id>', methods=["DELETE", "GET"])
-def task(task_id):
+@tasks.route('/api/task/<int:task_id>', methods=["DELETE", "GET", "PUT"])
+def api_task(task_id):
     global TASKS
+    #print(divisor)
+    #print("/api/task" , request, request.method, request.form, request.args, request.get_json())
+    #print(divisor)
     try:
         print("tasks", "TASK -> ", request.method, " --> ", task_id)
-        if(request.method == "DELETE"):
-            (_, task) = _filter_task_by_id_or_name(task_id)
-            if(task != None):
+        (_, task) = _filter_task_by_id_or_name(task_id)
+        if(task != None):
+            
+            if(request.method == "DELETE"):
                 if(TASKS[task_id]["pointer"]):
                     TASKS[task_id]["pointer"].kill()
                 TASKS[task_id]["status"] = "deleted"
                 return app.config['SUCCESS']
-            else:
-                return abort(404)
-        elif(request.method == "GET"):
-            (_, task) = _filter_task_by_id_or_name(task_id)
-            if(task != None):
+
+            elif(request.method == "PUT"):
+
+                if('taskName' in request.form):
+                    task["name"] = request.form['taskName']
+                if('taskEntry' in request.form):
+                    task["entry"] = __resolve_path(request.form['taskEntry'])
+                task["cron"] = None
+                task["status"] = "not running"
+                task["started_at"] = datetime.now().strftime("%Y-%d-%m %H:%M:%S")
+
+                flash({'title' : "Task", 'msg' : "Task {} updated with id: {}.".format(str(task['name']), str(task['id'])), 'type' : MsgTypes['SUCCESS']})
+                
+            if(request.method in ["DELETE", "GET", "PUT"]):
                 return jsonify({
                     'id': task['id'], 'pid': task['pid'], 'name': task['name'], 'entry': task['entry'],
                     'cron': task['cron'], 'status': task['status'], 'started_at': task['started_at']})
-            else:
-                return abort(404)
+
+        else:
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
+            return abort(404)
+        flash({'title' : "Tasks", 'msg' : "/api/task does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
         return abort(405)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -186,7 +211,7 @@ def task(task_id):
         return abort(500)
 
 @tasks.route('/api/task/info/<int:task_id>')
-def info_task(task_id):
+def api_info_task(task_id):
     global TASKS
     try:
         print("tasks", "INFO invoked")
@@ -198,6 +223,7 @@ def info_task(task_id):
                 data = task_file.read()
             return jsonify(data)
         else:
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -232,47 +258,20 @@ def api_schedule_task(task_id):
 
 
 # === Application routes ======================================================
-@tasks.route('/')
+@tasks.route('/', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
     global TASKS
-    error = ''
-    try:
-        if(request.method == "POST"):
-            print("tasks", "home-POST")
-            print("tasks", request.form)
-
-            TASKS.append({
-                    "id" : str(len(TASKS)),
-                    "pid" : None,
-                    "name" : request.form['taskName'],
-                    "entry" : __resolve_path(request.form['taskEntry']),
-                    "cron" : None,
-                    "pointer" : None,
-                    "status" : "not running",
-                    "no_runs" : 0,
-                    "started_at" : datetime.now().strftime("%Y-%d-%m %H:%M:%S")
-                })
-            flash({'title' : "Task", 'msg' : "Task {} created with id: {}.".format(str(TASKS[-1]['name']), str(TASKS[-1]['id'])), 'type' : MsgTypes['SUCCESS']})
-            print("tasks", TASKS)
-        elif(request.method == "GET"):
-            for idx, task in enumerate(TASKS):
-                TASKS[idx]["status"] = "running" if(isAlive(task)) else "not running"
-            print("tasks", "home-GET")
-
-        print("tasks", divisor)
-        print("tasks", " --> TASKS", TASKS)
-        print("tasks", divisor)
-        return render_template('running.html', tasks=TASKS)
-    except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
-        print("tasks", "INTERNAL ERROR", e)
-        return abort(500)
+    ans = _tasks_handler(request)
+    if(ans['response'] == app.config['SUCCESS']):
+        return render_template('tasks_view.html', tasks=ans['data'])
+    else:
+        return ans
 
 @tasks.route('/task/play/<int:task_id>')
 def play_task(task_id):
     ans = _play_task(task_id)
     if(ans == app.config['SUCCESS']):
-        return redirect('/')
+        return redirect(url_for('tasks.home'))
     else:
         return ans
 
@@ -280,7 +279,7 @@ def play_task(task_id):
 def stop_task(task_id):
     ans = _stop_task(task_id)
     if(ans == app.config['SUCCESS']):
-        return redirect('/')
+        return redirect(url_for('tasks.home'))
     else:
         return ans
 
@@ -288,7 +287,7 @@ def stop_task(task_id):
 def schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):
-        return redirect('/')
+        return redirect(url_for('tasks.home'))
     else:
         return ans
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

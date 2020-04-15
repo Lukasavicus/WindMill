@@ -1,0 +1,15 @@
+ROADMAP:
+	
+	[OK] flash messages;
+	[OK] cleanup print_debug;
+	[OK] documentation;
+	[OK] normalize routes function's names;
+	[  ] Make Tool Panels;
+	[  ] Add an Entity Runs;
+	[  ] Make it work with MongoDB;
+	[  ] Scheduler On/Off
+
+	[  ] Forms;
+	[  ] Authentication;
+	[  ] url_for;
+	[  ] DB Operations;

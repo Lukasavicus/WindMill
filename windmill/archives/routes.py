@@ -16,7 +16,7 @@ from werkzeug.utils import secure_filename
 from zipfile import ZipFile
 import shutil
 
-from windmill.main.utils import trace, divisor, __resolve_path, uri_sep
+from windmill.main.utils import trace, divisor, __resolve_path, uri_sep, MsgTypes
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -62,10 +62,11 @@ def _dir_listing(req_path=''):
     """
     trace('_dir_listing')
     abs_path = _get_req_absolute_path(req_path)
-    print("archives", divisor)
-    print("archives", "name", __name__, "archives.root_path", archives.root_path, "req_path", req_path, "abs_path", abs_path)
+    #print("archives", divisor)
+    #print("archives", "name", __name__, "archives.root_path", archives.root_path, "req_path", req_path, "abs_path", abs_path)
     # Return 404 if path doesn't exist
     if(not os.path.exists(abs_path)):
+        flash({'title' : "ERROR", 'msg' : 'Path not found', 'type' : MsgTypes['ERROR']})
         return abort(404)
 
     # Show directory contents
@@ -81,9 +82,9 @@ def _dir_listing(req_path=''):
     #locations = [{'name' : os.path.sep, 'path' : '/fs'}]
     resource_tree = _get_resource_tree(req_path)
 
-    print("archives", "resource_tree", resource_tree, " or ", req_path.split('/'), "  -- >", os.path.sep)
+    #print("archives", "resource_tree", resource_tree, " or ", req_path.split('/'), "  -- >", os.path.sep)
     for i, resource_tree_element in enumerate(resource_tree):
-        print("archives", "resource_tree_element", resource_tree_element)
+        #print("archives", "resource_tree_element", resource_tree_element)
         locations.append({'name' : resource_tree_element, 'path' : (uri_sep + 'fs' + uri_sep + uri_sep.join(resource_tree[:i+1]))})
 
     isRoot = len(resource_tree) == 1 and resource_tree[0] != ''
@@ -106,13 +107,13 @@ def upload_file():
     if(request.method == 'POST'):
         # check if the post request has the file part
         if('file' not in request.files):
-            flash('No file part')
+            flash({'title' : "Tasks", 'msg' : "No file part", 'type' : MsgTypes['ERROR']})
             print("archives", 'No file part')
             return redirect(request.url)
         file = request.files['file']
         # if user does not select file, browser also submit an empty part without filename
         if(file.filename == ''):
-            flash('No selected file')
+            flash({'title' : "Tasks", 'msg' : "No selected file", 'type' : MsgTypes['ERROR']})
             print("archives", 'No selected file')
             return redirect(request.url)
         if(file):# and allowed_file(file.filename):
@@ -121,7 +122,7 @@ def upload_file():
             full_filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(full_filename)
             
-            print("archives", 'extracting', full_filename)
+            #print("archives", 'extracting', full_filename)
             
             #foldername = filename.split('.')[0]
             foldername = os.path.join(request.form['venvName'], filename.split('.')[0])
@@ -132,28 +133,30 @@ def upload_file():
             with ZipFile(full_filename, 'r') as zipObj:
                 # Extract all the contents of zip file in current directory
                 zipObj.extractall(full_foldername)
-            print("archives", 'Finished')
+            #print("archives", 'Finished')
             os.remove(full_filename)
 
+            flash({'title' : "Archive", 'msg' : "Archive {} created successfully.".format(req_path), 'type' : MsgTypes['SUCCESS']})
             (files_info, locations, isRoot, folderEnv) = _dir_listing('')
-            return render_template('files.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
+            return render_template('archives_view.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
     elif(request.method == 'GET'):
         (files_info, locations, isRoot, folderEnv) = _dir_listing('')
-        return render_template('files.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
+        return render_template('archives_view.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
+    flash({'title' : "Tasks", 'msg' : "/upload does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
     return abort(405)
 # -----------------------------------------------------------------------------
 @archives.route('/fs', defaults={'req_path': ''})
 @archives.route('/fs/<path:req_path>')
 def dir_listing(req_path):
     req_path = __resolve_path(req_path)
-    print("archives", divisor)
-    trace('dir_listing')
+    #print("archives", divisor)
+    #trace('dir_listing')
     abs_path = _get_req_absolute_path(req_path)
     # Check if path is a file and serve
     if os.path.isfile(abs_path):
         return send_file(abs_path)
     (files_info, locations, isRoot, folderEnv) = _dir_listing(req_path)
-    return render_template('files.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
+    return render_template('archives_view.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -163,7 +166,7 @@ def dir_listing(req_path):
 @archives.route('/api/fs/<path:req_path>', methods=['GET', 'DELETE'])
 def dir_listing_api(req_path):
     req_path = __resolve_path(req_path)
-    trace('dir_listing_api')
+    #trace('dir_listing_api')
     try:
         abs_path = _get_req_absolute_path(req_path)
         (files_info, locations, isRoot, folderEnv) = _dir_listing(req_path)
@@ -173,10 +176,11 @@ def dir_listing_api(req_path):
             assert req_path.count(os.path.sep) == 0, "Selected path '{}' is not a root directory. Delete are allowed only in roots directories".format(req_path)
             shutil.rmtree(abs_path)
             abs_path = app.config['UPLOAD_FOLDER']
+            flash({'title' : "Archive", 'msg' : "Archive {} deleted.".format(req_path), 'type' : MsgTypes['SUCCESS']})
         # elif(request.method == "DELETE"):
         return jsonify ({'files_info' : files_info, 'locations' : locations})
     except Exception as e:
-        flash(e)
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("archives", "INTERNAL ERROR", e)
         return abort(500)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

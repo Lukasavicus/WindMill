@@ -15,7 +15,7 @@ import subprocess as sub
 import json
 from werkzeug.utils import secure_filename
 
-from windmill.main.utils import trace, divisor
+from windmill.main.utils import trace, divisor, MsgTypes
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 venvironments = Blueprint('venvironments', __name__)
@@ -28,7 +28,7 @@ def _get_packages(foldername):
     """
     pkgs = []
     try:
-        print("venvs", "TRYING ACCESS", foldername)
+        #print("venvs", "TRYING ACCESS", foldername)
         pipfile = os.path.join(foldername, 'Pipfile.lock')
         pkgs_data = {}
         with open(pipfile) as json_file:
@@ -36,40 +36,40 @@ def _get_packages(foldername):
 
         pkg_list = list(pkgs_data['default'].keys())
 
-        print("venvs", divisor)
-        print("venvs", "foldername", foldername, "pkgs_data", pkgs_data, "pkg_list", pkg_list)
-        print("venvs", divisor)
+        #print("venvs", divisor)
+        #print("venvs", "foldername", foldername, "pkgs_data", pkgs_data, "pkg_list", pkg_list)
+        #print("venvs", divisor)
 
         if(len(pkg_list) > 0):
             pkgs = [{'name' : pkg, 'version' : pkgs_data['default'][pkg]['version']} for pkg in pkg_list]
     except Exception as e:
-        flash(e)
+        flash({'title' : "Virtual Env", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("venvs", "INTERNAL ERROR", e)
         return abort(404)
     return pkgs
 
 
 # === Application routes ======================================================
-@venvironments.route('/packages/add')
-def packages_add():
+@venvironments.route('/environments/add')
+def environments_add():
     """
         Route to the view that renders the page to input a new virtual environment
     """
     return render_template('venv_mng.html')
 
-@venvironments.route('/packages', methods=["GET","POST"])
-def packages():
+@venvironments.route('/environments', methods=["GET","POST"])
+def environments():
     """
         Route to handles with:
         :GET: renders the page with all virtual environments
         :POST: create a new virtual environment (create a new folder that will
         represent a venv and install all python-packages to that venv).
     """
-    trace('packages')
+    #trace('packages')
     try:
         if(request.method == "POST"):
             print("venvs", "POST")
-            print("venvs", request.form)
+            #print("venvs", request.form)
             venvName = request.form['venvName']
             foldername = secure_filename(venvName)
             full_foldername = os.path.join(app.config['UPLOAD_FOLDER'], foldername)
@@ -95,7 +95,8 @@ def packages():
                         break
                     i += 1
             p = sub.Popen(["pipenv", "install", "-r", full_filename], cwd=full_foldername)
-            return redirect('/') #render_template('running.html', tasks=tasks)
+            flash({'title' : "Virtual Env", 'msg' : "Virtual Env {} created successfully".format(full_foldername), 'type' : MsgTypes['SUCCESS']})
+            return redirect(url_for('tasks.home')) #redirect('/') #render_template('running.html', tasks=tasks)
         elif(request.method == "GET"):
             print("venvs", "GET")
             BASE_DIR = app.config['UPLOAD_FOLDER']
@@ -109,24 +110,17 @@ def packages():
                         os.listdir(os.path.join(BASE_DIR, folder))
                     ))
                 } for folder in folders]
-            print("venvs", "ARCHIVES", venvs)
+            #print("venvs", "ARCHIVES", venvs)
             return render_template('venvs.html', venvs=venvs)#jsonify(venvs)
-
+        flash({'title' : "Virtual Env", 'msg' : "/packages  does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
         return abort(404)
     except Exception as e:
-        flash(e)
+        flash({'title' : "Virtual Env", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("venvs", "INTERNAL ERROR", e)
         return abort(500)
 
 
 # -----------------------------------------------------------------------------
-# @deprecated - test
-@venvironments.route('/packages/venv')
-def packages_venv():
-    pkgs = _get_packages('test')
-    
-    return jsonify(pkgs)
-
 # @deprecated - but could be usefull
 @venvironments.route('/packages/system')
 def packages_system():
