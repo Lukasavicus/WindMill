@@ -1,10 +1,27 @@
 import os
+import json
+import datetime
+from bson.objectid import ObjectId
 import platform
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+
+from flask_pymongo import PyMongo
+
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
+
+class JSONEncoder(json.JSONEncoder):
+    ''' extend json-encoder class'''
+
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        if isinstance(o, datetime.datetime):
+            return str(o)
+        return json.JSONEncoder.default(self, o)
+
 
 def create_app(test_config=None):
     """
@@ -49,8 +66,19 @@ def create_app(test_config=None):
 
 app = create_app()
 
+# Previous using SQLAlchemy with sqlite
 db = SQLAlchemy(app)
+
+# add mongo url to flask config, so that flask_pymongo can use it to make connection
+#app.config['MONGO_URI'] = os.environ.get('DB')
+app.config['MONGO_URI'] =  "mongodb://127.0.0.1:27017/wm" # windmill
+mongo = PyMongo(app)
+
+# use the modified encoder class to handle ObjectId & datetime object while jsonifying the response.
+app.json_encoder = JSONEncoder
+
 bcrypt = Bcrypt(app)
+
 login_manager = LoginManager(app)
 login_manager.login_view = 'main.login'
 login_manager.login_message_category = 'info'

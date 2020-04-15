@@ -15,6 +15,8 @@ import subprocess as sub
 from datetime import datetime
 
 from windmill.main.utils import trace, divisor, __resolve_path, MsgTypes
+
+from windmill.daos import JobDAO
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === globals and config ======================================================
@@ -61,6 +63,12 @@ def _tasks_handler(request):
                     "no_runs" : 0,
                     "started_at" : datetime.now().strftime("%Y-%d-%m %H:%M:%S")
                 })
+
+            jobDAO = JobDAO(
+                    request.form['taskName'], __resolve_path(request.form['taskEntry'])
+                )
+            jobDAO.insert()
+            
             flash({'title' : "Task", 'msg' : "Task {} created with id: {}.".format(str(TASKS[-1]['name']), str(TASKS[-1]['id'])), 'type' : MsgTypes['SUCCESS']})
             #print("tasks", TASKS)
         elif(request.method == "GET"):
@@ -76,6 +84,8 @@ def _tasks_handler(request):
                 'id': task['id'], 'pid': task['pid'], 'name': task['name'], 'entry': task['entry'],
                 'cron': task['cron'], 'status': task['status'], 'started_at': task['started_at']}, list(filter(lambda task :
                 task['status'] != 'deleted' ,TASKS))))
+
+        tasks_to_return = JobDAO.recover()
 
         return {'response' : app.config['SUCCESS'], 'data' : tasks_to_return}
     except Exception as e:

@@ -21,7 +21,7 @@ class User(db.Model, UserMixin):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === Job - Model =============================================================
-class Job(db.Model):
+class SQLJob(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(20), unique=True, nullable=False)
 	entry_point = db.Column(db.String(20), unique=True, nullable=False)
@@ -42,10 +42,11 @@ class Job(db.Model):
 		return f"User('{self.id}', '{self.name}', '{self.entry_point}')"
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# === Job - Model ==============================================================
+
+# === Execution - Model =======================================================
 class Execution(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
-	job_id
+	#job_id
 	start_at = db.Column(db.DateTime)
 	end_at = db.Column(db.DateTime)
 	status = db.Column(db.String(15))

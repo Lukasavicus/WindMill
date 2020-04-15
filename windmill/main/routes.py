@@ -12,7 +12,7 @@ import shutil
 from windmill.main.utils import trace, divisor, __resolve_path, uri_sep, MsgTypes
 from windmill.main.forms import RegistrationForm, LoginForm
 
-from windmill.models import Job, User
+from windmill.models import User
 from flask_login import login_user, current_user, logout_user, login_required
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

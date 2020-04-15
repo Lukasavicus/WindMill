@@ -26,3 +26,6 @@ Excelent Tutorial:
 About SQL & NoSQL in Flask:
 	https://turbogears.readthedocs.io/en/latest/cookbook/multiple-databases.html
 	https://www.reddit.com/r/learnpython/comments/1wz309/mongodb_vs_sqlalchemy/
+	https://medium.com/@riken.mehta/full-stack-tutorial-flask-react-docker-ee316a46e876
+	
+	https://www.youtube.com/watch?v=3ZS7LEH_XBg
