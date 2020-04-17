@@ -29,3 +29,16 @@ About SQL & NoSQL in Flask:
 	https://medium.com/@riken.mehta/full-stack-tutorial-flask-react-docker-ee316a46e876
 	
 	https://www.youtube.com/watch?v=3ZS7LEH_XBg
+
+	https://www.quora.com/Whats-the-best-MongoDB-ORM-for-Python
+	https://www.reddit.com/r/flask/comments/6hh6y7/mongodb_flaskers_whats_your_opinion_on_ming_vs/
+	https://www.google.com/search?q=ming+vs+mongokit&oq=ming+vs+mongokit&aqs=chrome..69i57j0l4.4265j0j7&sourceid=chrome&ie=UTF-8
+	https://ming.readthedocs.io/en/latest/
+	https://stackoverflow.com/questions/10252100/lightweight-mongodb-odm-orm-for-python
+	https://flask.palletsprojects.com/en/0.12.x/patterns/mongokit/
+	https://pythonhosted.org/Flask-MongoAlchemy/
+	https://www.google.com/search?q=python+flaks+mongodb+and+orm&oq=python+flaks+mongodb+and+orm&aqs=chrome..69i57j0l4.7797j0j4&sourceid=chrome&ie=UTF-8
+
+	https://www.google.com/search?q=python+flaks+mongodb+and+orm&oq=python+flaks+mongodb+and+orm&aqs=chrome..69i57j0l4.7797j0j4&sourceid=chrome&ie=UTF-8
+	https://www.youtube.com/channel/UC-QDfvrRIDB6F0bIO4I4HkQ/playlists
+	https://www.youtube.com/watch?v=3ZS7LEH_XBg

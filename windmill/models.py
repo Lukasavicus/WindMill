@@ -5,7 +5,9 @@ from flask_login import UserMixin
 def load_user(user_id):
 	return User.query.get(int(user_id))
 
+
 # === User - Model ============================================================
+# SQLite
 # The usage of UserMixin is necessary to transform this class into something that uses Login utilities
 class User(db.Model, UserMixin):
 	id = db.Column(db.Integer, primary_key=True)
@@ -21,6 +23,7 @@ class User(db.Model, UserMixin):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === Job - Model =============================================================
+# SQLite
 class SQLJob(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	name = db.Column(db.String(20), unique=True, nullable=False)
@@ -40,21 +43,4 @@ class SQLJob(db.Model):
 	# double-underscored methods -> dunder methods -> magic methods
 	def __repr__(self):
 		return f"User('{self.id}', '{self.name}', '{self.entry_point}')"
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-# === Execution - Model =======================================================
-class Execution(db.Model):
-	id = db.Column(db.Integer, primary_key=True)
-	#job_id
-	start_at = db.Column(db.DateTime)
-	end_at = db.Column(db.DateTime)
-	status = db.Column(db.String(15))
-	log = db.Column(db.String(1500))
-
-	#pid
-	#pointer
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

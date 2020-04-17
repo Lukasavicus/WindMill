@@ -1,17 +1,21 @@
 from windmill import mongo
 from datetime import datetime
+from bson.objectid import ObjectId
+from flask import current_app as app
 
+# TODO: change to an Enum
 STATUS = {}
 STATUS['not_running'] = "Not Running"
+STATUS['running'] = "Running"
 
 #class DAO():
 
 
 # === Job - Data Access Object ================================================
 class JobDAO():
+	_id = None
 	name = None
 	entry_point = None
-	pid = None
 	start_at = None
 	end_at = None
 	schd_hours = 0
@@ -19,6 +23,9 @@ class JobDAO():
 	schd_seconds = 0
 	last_exec_status = STATUS['not_running']
 	no_runs = 0
+
+	_pid = None
+	_process_pointer = None
 
 	def __init__(self, name, entry_point, start_at=None, end_at = None, schd_hours = 0, schd_minutes = 0, schd_seconds = 0):
 		self.name = name
@@ -42,7 +49,38 @@ class JobDAO():
 			'no_runs' : self.no_runs,
 		})
 
+	def isAlive(self):
+		return (self._process_pointer != None and self._process_pointer.poll() == None)
+
+	def play(self):
+		log = open((self.name + '.txt'), 'a')  # so that data written to it will be appended
+		#p = sub.Popen(['python3 ', (os.path.join(app.config['UPLOAD_FOLDER'], job["entry_point"]))], stdout=log)
+		p = sub.Popen([(app.config['python_cmd'] + ' '), (os.path.join(app.config['UPLOAD_FOLDER'], self.entry_point ))], stdout=log)
+		self._process_pointer = p
+		self.pid = p.pid
+		self.status = STATUS['running']
+
+	def stop(self):
+		self._process_pointer.kill()
+		self.status = "not active"
+
+	def delete(self):
+		if(self._process_pointer):
+			self._process_pointer.kill()
+		mongo.db.jobs.delete_one( {"_id": ObjectId(self._id)});
+
 	@staticmethod
 	def recover():
 		return list(mongo.db.jobs.find({}))
+
+	@staticmethod
+	def recover_by_id(id):
+		return list(mongo.db.jobs.find_one({_id : ObjectId(id)}))
+
+	@staticmethod
+	def delete_by_id(id):
+		return mongo.db.jobs.delete_one( {"_id": ObjectId(id)});
+
+	def __repr__(self):
+		return f"JOB: id[{self._id}] name[{self.name}]"
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

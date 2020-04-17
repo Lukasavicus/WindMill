@@ -15,15 +15,30 @@ import subprocess as sub
 from datetime import datetime
 
 from windmill.main.utils import trace, divisor, __resolve_path, MsgTypes
+from bson.objectid import ObjectId
 
 from windmill.daos import JobDAO
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === globals and config ======================================================
-TASKS = [] #THIS SHOULD BE CHANGED IN FUTURE FOR SOME DATABASE MODEL DATA REPRESENTATION
+JOBS = [] #THIS SHOULD BE CHANGED IN FUTURE FOR SOME DATABASE MODEL DATA REPRESENTATION
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 tasks = Blueprint('tasks', __name__)
+
+# =============================================================================
+def _load_jobs():
+    global JOBS
+    jobs_list = JobDAO.recover()
+    for job_in_list in jobs_list:
+        job = JobDAO(job_in_list['name'], job_in_list['entry_point'], job_in_list['start_at'], job_in_list['end_at'], job_in_list['schd_hours'], job_in_list['schd_minutes'], job_in_list['schd_seconds'])
+        job._id = job_in_list['_id']
+        job.last_exec_status = job_in_list['last_exec_status']
+        job.no_runs = job_in_list['no_runs']
+        JOBS.append(job)
+
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 # === HELPERS functions =======================================================
 @tasks.route('/test')
@@ -31,112 +46,92 @@ def test():
     return render_template('running_t.html')
     #return render_template('test.html')
 
-def _filter_task_by_id_or_name(name_id):
-    global TASKS
-    selected_task_arr = list(filter(lambda task : (task["name"] == name_id or task["id"] == str(name_id)), TASKS))
-    selected_task = None
-    if(len(selected_task_arr) > 0):
-        selected_task = selected_task_arr[0]
-    return (selected_task_arr, selected_task)
-
-def isAlive(task):
-    return (task["pointer"] != None and task["pointer"].poll() == None)
+def _filter_job_by_id(_id):
+    print("_filter_job_by_id")
+    global JOBS
+    selected_job_arr = list(filter(lambda job : (job._id == ObjectId(_id)), JOBS))
+    selected_job = None
+    if(len(selected_job_arr) > 0):
+        selected_job = selected_job_arr[0]
+    return (selected_job_arr, selected_job)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 
 # === WRAPPED FUNCTIONS =======================================================
-def _tasks_handler(request):
-    global TASKS
+def _jobs_handler(request):
+    global JOBS
     try:
         if(request.method == "POST"):
-            #print("tasks", "home-POST")
-            #print("tasks", request.form)
-            TASKS.append({
-                    "id" : str(len(TASKS)),
-                    "pid" : None,
-                    "name" : request.form['taskName'],
-                    "entry" : __resolve_path(request.form['taskEntry']),
-                    "cron" : None,
-                    "pointer" : None,
-                    "status" : "not running",
-                    "no_runs" : 0,
-                    "started_at" : datetime.now().strftime("%Y-%d-%m %H:%M:%S")
-                })
+            #print("tasks", "home-POST", request.form)
 
             jobDAO = JobDAO(
                     request.form['taskName'], __resolve_path(request.form['taskEntry'])
                 )
             jobDAO.insert()
-            
-            flash({'title' : "Task", 'msg' : "Task {} created with id: {}.".format(str(TASKS[-1]['name']), str(TASKS[-1]['id'])), 'type' : MsgTypes['SUCCESS']})
+
+            _load_jobs() # TODO: eliminate the need of query all jobs by getting the _id of inserted job
+
+            flash({'title' : "Task", 'msg' : "Task {} created.".format(jobDAO.name), 'type' : MsgTypes['SUCCESS']})
             #print("tasks", TASKS)
+
         elif(request.method == "GET"):
-            for idx, task in enumerate(TASKS):
-                TASKS[idx]["status"] = "running" if(isAlive(task)) else "not running"
             #print("tasks", "home-GET")
+
+            for job in JOBS:
+                job.last_exec_status = "running" if(job.isAlive()) else "not running"
         
         #print("tasks", divisor)
         #print("tasks", " --> TASKS", TASKS)
         #print("tasks", divisor)
 
-        tasks_to_return = list(map(lambda task : {
-                'id': task['id'], 'pid': task['pid'], 'name': task['name'], 'entry': task['entry'],
-                'cron': task['cron'], 'status': task['status'], 'started_at': task['started_at']}, list(filter(lambda task :
-                task['status'] != 'deleted' ,TASKS))))
+        jobs_to_return = JobDAO.recover()
 
-        tasks_to_return = JobDAO.recover()
-
-        return {'response' : app.config['SUCCESS'], 'data' : tasks_to_return}
+        return {'response' : app.config['SUCCESS'], 'data' : jobs_to_return}
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
-def _play_task(task_id):
-    global TASKS
+def _play_task(job_id):
+    global JOBS
     try:
         print("tasks", divisor)
-        print("tasks", "PLAY invoked ", task_id)
+        print("tasks", "PLAY invoked ", job_id)
         print("tasks", divisor)
-        (_, task) = _filter_task_by_id_or_name(task_id)
-        print("tasks", "PLAY> ", task)
+        (_, job) = _filter_job_by_id(job_id)
+        print("jobs", "PLAY> ", job)
 
-        if(task != None):
-            print("tasks", divisor)
-            print("tasks", app.config['python_cmd'] + " ", os.path.join(app.config['UPLOAD_FOLDER'], task["entry"]))
-            print("tasks", divisor)
-            log = open((task["name"]+'.txt'), 'a')  # so that data written to it will be appended
-            #p = sub.Popen(['python3 ', (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"]))], stdout=log)
-            p = sub.Popen([(app.config['python_cmd'] + ' '), (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"]))], stdout=log)
-            TASKS[task_id]["pointer"] = p
-            TASKS[task_id]["pid"] = p.pid
-            TASKS[task_id]["status"] = "running"
-            print("tasks", "EXECUTING .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
-            flash({'title' : "Task Action", 'msg' : "Task id:{} is now running".format(str(task['id'])), 'type' : MsgTypes['SUCCESS']})
+        if(job != None):
+            
+            job.play()
+            
+            print("tasks", "EXECUTING .. ", (os.path.join(app.config['UPLOAD_FOLDER'], job.entry_point)))
+            flash({'title' : "", 'msg' : f"Job {job.name} is now running", 'type' : MsgTypes['SUCCESS']})
             return app.config['SUCCESS']
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Task Action", 'msg' : f"Job with id:{job_id} not found", 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
-def _stop_task(task_id):
-    global TASKS
+def _stop_task(job_id):
+    global JOBS
     try:
         print("tasks", "STOP invoked")
-        (_, task) = _filter_task_by_id_or_name(task_id)
+        (_, job) = _filter_job_by_id(job_id)
 
-        if(task != None):
-            TASKS[task_id]["pointer"].kill()
-            TASKS[task_id]["status"] = "not active"
-            print("tasks", "KILLING .. ", task["entry"])
-            flash({'title' : "Task Action", 'msg' : "Task id:{} is now stopped".format(str(task['id'])), 'type' : MsgTypes['SUCCESS']})
+        if(job != None):
+            
+            job.stop()
+
+            print("jobs", "KILLING .. ", job.entry_point)
+            flash({'title' : "Task Action", 'msg' : f"Job {job.name} is now stoped", 'type' : MsgTypes['SUCCESS']})
             return app.config['SUCCESS']
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Task Action", 'msg' : f"Job with id:{job_id} not found", 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -147,18 +142,18 @@ def _schedule_task(task_id):
     global TASKS
     try:
         print("tasks", "SCHEDULE invoked")
-        (_, task) = _filter_task_by_id_or_name(task_id)
+        (_, task) = _filter_job_by_id(task_id)
 
         if(task != None):
             print("tasks", "task is not None")
-            p = sub.Popen([(app.config['python_cmd'] + ' '), '.\executor.py', (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])), "seconds", "90"])
+            p = sub.Popen([(app.config['python_cmd'] + ' '), '.\executor.py', (os.path.join(app.config['UPLOAD_FOLDER'], task["entry_point"])), "seconds", "90"])
             TASKS[task_id]["pointer"] = p
             TASKS[task_id]["pid"] = p.pid
             TASKS[task_id]["status"] = "running (schdl)"
-            print("tasks", "SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry"])))
+            print("tasks", "SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry_point"])))
             return app.config['SUCCESS']
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['_id'])), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -170,48 +165,47 @@ def _schedule_task(task_id):
 @tasks.route('/api/tasks/', methods=["GET","POST"])
 def api_tasks():
     global TASKS
-    ans = _tasks_handler(request)
+    ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
         return jsonify(ans['data'])
     else:
         return ans
 
-@tasks.route('/api/task/<int:task_id>', methods=["DELETE", "GET", "PUT"])
-def api_task(task_id):
-    global TASKS
-    #print(divisor)
-    #print("/api/task" , request, request.method, request.form, request.args, request.get_json())
-    #print(divisor)
+@tasks.route('/api/task/<job_id>', methods=["DELETE", "GET", "PUT"])
+def api_task(job_id):
+    global JOBS
     try:
-        print("tasks", "TASK -> ", request.method, " --> ", task_id)
-        (_, task) = _filter_task_by_id_or_name(task_id)
-        if(task != None):
+        print("tasks", "TASK -> ", request.method, " --> ", job_id)
+        (_, job) = _filter_job_by_id(job_id)
+        print("\n\n", job, "\n\n")
+        if(job != None):
             
             if(request.method == "DELETE"):
-                if(TASKS[task_id]["pointer"]):
-                    TASKS[task_id]["pointer"].kill()
-                TASKS[task_id]["status"] = "deleted"
+                for idx, job in enumerate(JOBS):
+                    if(job._id == job_id):
+                        del JOBS[idx]
+                job.delete()
                 return app.config['SUCCESS']
 
             elif(request.method == "PUT"):
 
-                if('taskName' in request.form):
-                    task["name"] = request.form['taskName']
-                if('taskEntry' in request.form):
-                    task["entry"] = __resolve_path(request.form['taskEntry'])
-                task["cron"] = None
-                task["status"] = "not running"
-                task["started_at"] = datetime.now().strftime("%Y-%d-%m %H:%M:%S")
+                # if('taskName' in request.form):
+                #     task["name"] = request.form['taskName']
+                # if('taskEntry' in request.form):
+                #     task["entry_point"] = __resolve_path(request.form['taskEntry'])
+                # task["cron"] = None
+                # task["status"] = "not running"
+                # task["started_at"] = datetime.now().strftime("%Y-%d-%m %H:%M:%S")
 
-                flash({'title' : "Task", 'msg' : "Task {} updated with id: {}.".format(str(task['name']), str(task['id'])), 'type' : MsgTypes['SUCCESS']})
+                flash({'title' : "Jobs", 'msg' : f"Job {job.name} updated with id: {job._id}.", 'type' : MsgTypes['SUCCESS']})
                 
             if(request.method in ["DELETE", "GET", "PUT"]):
                 return jsonify({
-                    'id': task['id'], 'pid': task['pid'], 'name': task['name'], 'entry': task['entry'],
-                    'cron': task['cron'], 'status': task['status'], 'started_at': task['started_at']})
+                    '_id': job._id, 'pid': job._pid, 'name': job.name, 'entry_point': job.entry_point,
+                    'last_exec_status': job.last_exec_status, 'start_at': job.start_at})
 
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Task Action", 'msg' : f"Job id:{job_id} could not be found", 'type' : MsgTypes['ERROR']})
             return abort(404)
         flash({'title' : "Tasks", 'msg' : "/api/task does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
         return abort(405)
@@ -225,7 +219,7 @@ def api_info_task(task_id):
     global TASKS
     try:
         print("tasks", "INFO invoked")
-        (_, task) = _filter_task_by_id_or_name(task_id)
+        (_, task) = _filter_job_by_id(task_id)
         data = ""
         if(task != None):
             print("tasks", "task is not None")
@@ -233,7 +227,7 @@ def api_info_task(task_id):
                 data = task_file.read()
             return jsonify(data)
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['id'])), 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['_id'])), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -271,7 +265,7 @@ def api_schedule_task(task_id):
 @tasks.route('/', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
     global TASKS
-    ans = _tasks_handler(request)
+    ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
         return render_template('tasks_view.html', tasks=ans['data'])
     else:
@@ -301,3 +295,6 @@ def schedule_task(task_id):
     else:
         return ans
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+_load_jobs()
+print("\n\nJOBS>>", JOBS, "\n\n\n")
