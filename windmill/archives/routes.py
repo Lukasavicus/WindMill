@@ -136,7 +136,7 @@ def upload_file():
             #print("archives", 'Finished')
             os.remove(full_filename)
 
-            flash({'title' : "Archive", 'msg' : "Archive {} created successfully.".format(req_path), 'type' : MsgTypes['SUCCESS']})
+            flash({'title' : "Archive", 'msg' : f"Archive {full_filename} created successfully.", 'type' : MsgTypes['SUCCESS']})
             (files_info, locations, isRoot, folderEnv) = _dir_listing('')
             return render_template('archives_view.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
     elif(request.method == 'GET'):

@@ -3,7 +3,7 @@
 {% block content %}
 	<div class="container">
 		<section id="venv-mng">
-		<form method="POST" action="/packages">
+		<form method="POST" action="{{ url_for('venvironments.environments') }}">
 			<div class = "row">
 				<div class="form-group col-sm-6">
 					<label for="venvName">Name</label>

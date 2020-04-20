@@ -3,7 +3,7 @@ import os
 from apscheduler.schedulers.blocking import BlockingScheduler
 import platform
 
-python_cmd = 'python' if platform.syste() == 'Windows' else 'python3'
+python_cmd = 'python' if platform.system() == 'Windows' else 'python3'
 
 def cronjob(): # script_name
     print("cronjob")

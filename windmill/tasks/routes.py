@@ -234,9 +234,9 @@ def api_info_task(task_id):
         print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
-@tasks.route('/api/task/play/<int:task_id>')
-def api_play_task(task_id):
-    ans = _play_task(task_id)
+@tasks.route('/api/task/play/<job_id>')
+def api_play_task(job_id):
+    ans = _play_task(job_id)
     print("tasks", "PLAY return", ans, app.config['SUCCESS'], ans == app.config['SUCCESS'])
     if(ans == app.config['SUCCESS']):
         return jsonify(success=True)
