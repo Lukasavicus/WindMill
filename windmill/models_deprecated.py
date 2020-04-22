@@ -22,49 +22,25 @@ class User(db.Model, UserMixin):
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-class JobList():
-	pass
-
 # === Job - Model =============================================================
-class Job():
-	_id = None
-	name = None
-	entry_point = None
-	start_at = None
-	end_at = None
-	schd_hours = 0
-	schd_minutes = 0
-	schd_seconds = 0
-	last_exec_status = None#STATUS['not_running']
-	no_runs = 0
+# SQLite
+class SQLJob(db.Model):
+	id = db.Column(db.Integer, primary_key=True)
+	name = db.Column(db.String(20), unique=True, nullable=False)
+	entry_point = db.Column(db.String(20), unique=True, nullable=False)
+	start_at = db.Column(db.DateTime)
+	end_at = db.Column(db.DateTime)
+	schd_hours = db.Column(db.Integer)
+	schd_minutes = db.Column(db.Integer)
+	schd_seconds = db.Column(db.Integer)
+	last_exec_status = db.Column(db.String(15))
+	no_runs = db.Column(db.Integer)
 
-	_pid = None
-	_process_pointer = None
-	agent = None
+	#pid
+	#pointer
+ 
 
-	def __init__(self, name, entry_point, start_at=None, end_at = None, schd_hours = 0, schd_minutes = 0, schd_seconds = 0):
-		self.name = name
-		self.entry_point = entry_point
-		self.start_at = start_at
-		self.end_at = end_at
-		self.schd_hours = schd_hours
-		self.schd_minutes = schd_minutes
-		self.schd_seconds = schd_seconds
-
-	def isAlive(self):
-		return (self._process_pointer != None and self._process_pointer.poll() == None)
-
-	def play(self):
-		self.agent.execute_job()
-
-	def stop(self):
-		self.agent.kill_job()
-
-	def jsonify(self):
-		return {'_id': self._id, 'pid': self._pid, 'name': self.name, 'entry_point': self.entry_point,
-                    'last_exec_status': self.last_exec_status, 'start_at': self.start_at}
-
+	# double-underscored methods -> dunder methods -> magic methods
 	def __repr__(self):
-		return f"JOB: id[{self._id}] name[{self.name}]"
-
+		return f"User('{self.id}', '{self.name}', '{self.entry_point}')"
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

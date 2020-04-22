@@ -30,6 +30,7 @@ class JobDAO():
 
 	_pid = None
 	_process_pointer = None
+	agent = None
 
 	def __init__(self, name, entry_point, start_at=None, end_at = None, schd_hours = 0, schd_minutes = 0, schd_seconds = 0):
 		self.name = name
@@ -39,6 +40,8 @@ class JobDAO():
 		self.schd_hours = schd_hours
 		self.schd_minutes = schd_minutes
 		self.schd_seconds = schd_seconds
+
+		self.agent = Agent(mongo, self)
 
 	def insert(self):
 		mongo.db.jobs.insert({
@@ -50,30 +53,20 @@ class JobDAO():
 			'schd_minutes' : self.schd_minutes,
 			'schd_seconds' : self.schd_seconds,
 			'last_exec_status' : self.last_exec_status,
-			'no_runs' : self.no_runs,
-			'runs' : []
+			'no_runs' : self.no_runs
 		})
 
 	def isAlive(self):
 		return (self._process_pointer != None and self._process_pointer.poll() == None)
 
-	def _play(self):
-		#p = sub.Popen(['python3 ', (os.path.join(app.config['UPLOAD_FOLDER'], job["entry_point"]))], stdout=log)
-		cmd_str = f"{app.config['python_cmd']} logger.py {os.path.join(app.config['UPLOAD_FOLDER'], self.entry_point )}"
-		print(os.system('cd'))
-		p = sub.Popen(cmd_str, cwd=os.path.join('windmill','agents'))
-		self._process_pointer = p
-		self.pid = p.pid
-		self.status = STATUS['running']
-	
 	def play(self):
-		print("This play was invoked")
-		agent = Agent(mongo, self)
-		agent.execute_job()
+		self.agent.execute_job()
 
 	def stop(self):
-		self._process_pointer.kill()
-		self.status = "not active"
+		self.agent.kill_job()
+
+	def schedule(self):
+		self.agent.schedule_job()
 
 	def delete(self):
 		if(self._process_pointer):
@@ -86,7 +79,7 @@ class JobDAO():
 
 	@staticmethod
 	def recover_by_id(id):
-		return list(mongo.db.jobs.find_one({_id : ObjectId(id)}))
+		return list(mongo.db.jobs.find_one({'_id' : ObjectId(id)}))
 
 	@staticmethod
 	def delete_by_id(id):

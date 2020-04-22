@@ -60,7 +60,6 @@ def _filter_job_by_id(_id):
 
 # === WRAPPED FUNCTIONS =======================================================
 def _jobs_handler(request):
-    global JOBS
     try:
         if(request.method == "POST"):
             #print("tasks", "home-POST", request.form)
@@ -76,10 +75,7 @@ def _jobs_handler(request):
             #print("tasks", TASKS)
 
         elif(request.method == "GET"):
-            #print("tasks", "home-GET")
-
-            for job in JOBS:
-                job.last_exec_status = "running" if(job.isAlive()) else "not running"
+            print("tasks", "home-GET")
         
         #print("tasks", divisor)
         #print("tasks", " --> TASKS", TASKS)
@@ -94,7 +90,6 @@ def _jobs_handler(request):
         return abort(500)
 
 def _play_task(job_id):
-    global JOBS
     try:
         print("tasks", divisor)
         print("tasks", "PLAY invoked ", job_id)
@@ -118,7 +113,6 @@ def _play_task(job_id):
         return abort(500)
 
 def _stop_task(job_id):
-    global JOBS
     try:
         print("tasks", "STOP invoked")
         (_, job) = _filter_job_by_id(job_id)
@@ -138,22 +132,18 @@ def _stop_task(job_id):
         print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
-def _schedule_task(task_id):
-    global TASKS
+def _schedule_task(job_id):
     try:
         print("tasks", "SCHEDULE invoked")
-        (_, task) = _filter_job_by_id(task_id)
+        (_, job) = _filter_job_by_id(job_id)
 
-        if(task != None):
-            print("tasks", "task is not None")
-            p = sub.Popen([(app.config['python_cmd'] + ' '), '.\executor.py', (os.path.join(app.config['UPLOAD_FOLDER'], task["entry_point"])), "seconds", "90"])
-            TASKS[task_id]["pointer"] = p
-            TASKS[task_id]["pid"] = p.pid
-            TASKS[task_id]["status"] = "running (schdl)"
-            print("tasks", "SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], task["entry_point"])))
+        if(job != None):
+            print("jobs", "job is not None")
+            job.schedule()
+            print("tasks", "SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], job.entry_point)))
             return app.config['SUCCESS']
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['_id'])), 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(job._id)), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -164,7 +154,6 @@ def _schedule_task(task_id):
 # === API routes ==============================================================
 @tasks.route('/api/tasks/', methods=["GET","POST"])
 def api_tasks():
-    global TASKS
     ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
         return jsonify(ans['data'])
@@ -179,7 +168,6 @@ def api_task(job_id):
         (_, job) = _filter_job_by_id(job_id)
         print("\n\n", job, "\n\n")
         if(job != None):
-            
             if(request.method == "DELETE"):
                 for idx, job in enumerate(JOBS):
                     if(job._id == job_id):
@@ -214,12 +202,11 @@ def api_task(job_id):
         print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
-@tasks.route('/api/task/info/<int:task_id>')
-def api_info_task(task_id):
-    global TASKS
+@tasks.route('/api/task/info/<job_id>')
+def api_info_task(job_id):
     try:
         print("tasks", "INFO invoked")
-        (_, task) = _filter_job_by_id(task_id)
+        (_, task) = _filter_job_by_id(job_id)
         data = ""
         if(task != None):
             print("tasks", "task is not None")
@@ -243,9 +230,9 @@ def api_play_task(job_id):
     else:
         return ans
 
-@tasks.route('/api/task/stop/<int:task_id>')
-def api_stop_task(task_id):
-    ans = _stop_task(task_id)
+@tasks.route('/api/task/stop/<job_id>')
+def api_stop_task(job_id):
+    ans = _stop_task(job_id)
     if(ans == app.config['SUCCESS']):
         return jsonify(success=True)
     else:
@@ -264,7 +251,6 @@ def api_schedule_task(task_id):
 # === Application routes ======================================================
 @tasks.route('/', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
-    global TASKS
     ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
         return render_template('tasks_view.html', tasks=ans['data'])
