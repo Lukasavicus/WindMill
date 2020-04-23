@@ -6,28 +6,43 @@
     		<table class="table table-striped table-dark" id="jobs">
     			<thead>
     				<tr>
-    					<th scope="col" colspan="4">EXECUTION INFO</th>
-    					<th scope="col" colspan="4">CRON</th>
-    					<th scope="col" colspan="7"></th>
+    					<th scope="col" colspan="5">EXECUTION INFO</th>
+    					<th scope="col" colspan="2"></th>
     				</tr>
     			<tr>
     				<th scope="col">JOB NAME</th>
-    				<th scope="col">ENTRY POINT</th>
-    				<th scope="col">STARTED AT</th>
-    				<th scope="col">RUN AT</th>
+    				<th scope="col">JOB ENTRY POINT</th>
+					<th scope="col">STARTED AT</th>
+					<th scope="col">ENDED AT</th>
     				<th scope="col">STATUS</th>
     			</tr>
     			</thead>
     			<tbody>
     			{% for run in runs %}
     				<tr>
-    					<td>{{run["name"]}}</td>
-    					<td>{{run["entry_point"]}}</td>
-    					<td>{{run["started_at"]}}</td>
-    					<td>{{run["run_at"]}}</td>
-    					<td>{{run["status"]}}</td>
-    					<td><i onclick='modal_info_click({{run["_id"]}})' data-toggle="modal" data-target="#modal-info" class="fa fa-info"></i></td>
-    				</tr>
+    					<td>{{run.job_name}}</td>
+						<td>{{run.job_entry_point}}</td>
+						<!-- <td>{{run._id}}</td> -->
+						<td>{{run.started_at}}</td>
+						<td>{{run.ended_at}}</td>
+						<td>{{run.status}}</td>
+						<td><i data-toggle="collapse" data-target="#collapse{{loop.index}}_out" aria-expanded="true" aria-controls="collapse{{loop.index}}_out" class="fas fa-terminal {{ 'not-allowed' if run.out|length == 0}}"></i></td>
+						<td><i data-toggle="collapse" data-target="#collapse{{loop.index}}_err" aria-expanded="true" aria-controls="collapse{{loop.index}}_err" class="fas fa-bug {{ 'not-allowed' if run.err|length == 0}}"></i></td>
+					</tr>
+					
+					{% set outer_loop = loop.index %}
+					{% for out in run.out %}
+						<tr>
+							<td id="collapse{{outer_loop}}_out" class="terminal-ish accordian-body collapse" aria-labelledby="heading{{outer_loop}}" colspan="7"> {{ out }} </td>
+						</tr>
+					{% endfor %}
+					{% for err in run.err %}
+						<tr>
+							<td id="collapse{{outer_loop}}_err" class="terminal-ish-error accordian-body collapse" aria-labelledby="heading{{outer_loop}}" colspan="7"> {{ err }} </td>
+						</tr>
+					{% endfor %}
+					
+
     			{% endfor %}
     		</tbody>
     	</table>
@@ -39,5 +54,6 @@
         {% endif %}
     	</section>
 	</div>
-	
+	<script src="{{ url_for('static', filename='modal_script.js') }}"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='collapse-info-table.css') }}"></link>
 {% endblock %}

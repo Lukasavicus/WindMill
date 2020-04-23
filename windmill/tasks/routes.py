@@ -17,43 +17,16 @@ from datetime import datetime
 from windmill.main.utils import trace, divisor, __resolve_path, MsgTypes
 from bson.objectid import ObjectId
 
-from windmill.daos import JobDAO
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-# === globals and config ======================================================
-JOBS = [] #THIS SHOULD BE CHANGED IN FUTURE FOR SOME DATABASE MODEL DATA REPRESENTATION
+from windmill.models import Job, JobDAO
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 tasks = Blueprint('tasks', __name__)
-
-# =============================================================================
-def _load_jobs():
-    global JOBS
-    jobs_list = JobDAO.recover()
-    for job_in_list in jobs_list:
-        job = JobDAO(job_in_list['name'], job_in_list['entry_point'], job_in_list['start_at'], job_in_list['end_at'], job_in_list['schd_hours'], job_in_list['schd_minutes'], job_in_list['schd_seconds'])
-        job._id = job_in_list['_id']
-        job.last_exec_status = job_in_list['last_exec_status']
-        job.no_runs = job_in_list['no_runs']
-        JOBS.append(job)
-
-# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
 
 # === HELPERS functions =======================================================
 @tasks.route('/test')
 def test():
     return render_template('running_t.html')
     #return render_template('test.html')
-
-def _filter_job_by_id(_id):
-    print("_filter_job_by_id")
-    global JOBS
-    selected_job_arr = list(filter(lambda job : (job._id == ObjectId(_id)), JOBS))
-    selected_job = None
-    if(len(selected_job_arr) > 0):
-        selected_job = selected_job_arr[0]
-    return (selected_job_arr, selected_job)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -64,37 +37,30 @@ def _jobs_handler(request):
         if(request.method == "POST"):
             #print("tasks", "home-POST", request.form)
 
-            jobDAO = JobDAO(
+            job = Job(
                     request.form['taskName'], __resolve_path(request.form['taskEntry'])
                 )
-            jobDAO.insert()
+            JobDAO.insert(job)
 
-            _load_jobs() # TODO: eliminate the need of query all jobs by getting the _id of inserted job
-
-            flash({'title' : "Task", 'msg' : "Task {} created.".format(jobDAO.name), 'type' : MsgTypes['SUCCESS']})
+            flash({'title' : "Task", 'msg' : "Task {} created.".format(job.name), 'type' : MsgTypes['SUCCESS']})
             #print("tasks", TASKS)
 
         elif(request.method == "GET"):
-            print("tasks", "home-GET")
-        
-        #print("tasks", divisor)
-        #print("tasks", " --> TASKS", TASKS)
-        #print("tasks", divisor)
-
+            print("jobs", "home-GET")
         jobs_to_return = JobDAO.recover()
 
         return {'response' : app.config['SUCCESS'], 'data' : jobs_to_return}
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
-        print("tasks", "INTERNAL ERROR", e)
+        print("_jobs_handler", "INTERNAL ERROR", e)
         return abort(500)
 
 def _play_task(job_id):
     try:
-        print("tasks", divisor)
-        print("tasks", "PLAY invoked ", job_id)
-        print("tasks", divisor)
-        (_, job) = _filter_job_by_id(job_id)
+        #print("tasks", divisor)
+        #print("tasks", "PLAY invoked ", job_id)
+        #print("tasks", divisor)
+        job = JobDAO.recover_by_id(job_id)
         print("jobs", "PLAY> ", job)
 
         if(job != None):
@@ -115,7 +81,7 @@ def _play_task(job_id):
 def _stop_task(job_id):
     try:
         print("tasks", "STOP invoked")
-        (_, job) = _filter_job_by_id(job_id)
+        job = JobDAO.recover_by_id(job_id)
 
         if(job != None):
             
@@ -135,7 +101,7 @@ def _stop_task(job_id):
 def _schedule_task(job_id):
     try:
         print("tasks", "SCHEDULE invoked")
-        (_, job) = _filter_job_by_id(job_id)
+        job = JobDAO.recover_by_id(job_id)
 
         if(job != None):
             print("jobs", "job is not None")
@@ -156,23 +122,23 @@ def _schedule_task(job_id):
 def api_tasks():
     ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
-        return jsonify(ans['data'])
+        jobs = ans['data']
+        jobs_json = []
+        for job in jobs:
+            jobs_json.append(job.jsonify())
+        return jsonify(jobs_json)
     else:
         return ans
 
 @tasks.route('/api/task/<job_id>', methods=["DELETE", "GET", "PUT"])
 def api_task(job_id):
-    global JOBS
     try:
         print("tasks", "TASK -> ", request.method, " --> ", job_id)
-        (_, job) = _filter_job_by_id(job_id)
+        job = JobDAO.recover_by_id(job_id)
         print("\n\n", job, "\n\n")
         if(job != None):
             if(request.method == "DELETE"):
-                for idx, job in enumerate(JOBS):
-                    if(job._id == job_id):
-                        del JOBS[idx]
-                job.delete()
+                #JobDAO.delete(job)
                 return app.config['SUCCESS']
 
             elif(request.method == "PUT"):
@@ -185,12 +151,10 @@ def api_task(job_id):
                 # task["status"] = "not running"
                 # task["started_at"] = datetime.now().strftime("%Y-%d-%m %H:%M:%S")
 
-                flash({'title' : "Jobs", 'msg' : f"Job {job.name} updated with id: {job._id}.", 'type' : MsgTypes['SUCCESS']})
+                return app.config['SUCCESS']
                 
             if(request.method in ["DELETE", "GET", "PUT"]):
-                return jsonify({
-                    '_id': job._id, 'pid': job._pid, 'name': job.name, 'entry_point': job.entry_point,
-                    'last_exec_status': job.last_exec_status, 'start_at': job.start_at})
+                return jsonify(job.jsonify())
 
         else:
             flash({'title' : "Task Action", 'msg' : f"Job id:{job_id} could not be found", 'type' : MsgTypes['ERROR']})
@@ -206,15 +170,12 @@ def api_task(job_id):
 def api_info_task(job_id):
     try:
         print("tasks", "INFO invoked")
-        (_, task) = _filter_job_by_id(job_id)
-        data = ""
-        if(task != None):
-            print("tasks", "task is not None")
-            with open((task["name"]+'.txt'), 'r') as task_file:
-                data = task_file.read()
-            return jsonify(data)
+        job = JobDAO.recover_by_id(job_id)
+        if(job != None):
+            print("Jobs", "job is not None", job)
+            #return jsonify(data)
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(task['_id'])), 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Job Action", 'msg' : "Job id:{} could not be found".format(str(job._id)), 'type' : MsgTypes['ERROR']})
             return abort(404)
     except Exception as e:
         flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
@@ -238,7 +199,7 @@ def api_stop_task(job_id):
     else:
         return ans
 
-@tasks.route('/api/task/schedule/<int:task_id>')
+@tasks.route('/api/task/schedule/<task_id>')
 def api_schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):
@@ -253,7 +214,8 @@ def api_schedule_task(task_id):
 def home():
     ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
-        return render_template('tasks_view.html', tasks=ans['data'])
+        jobs = JobDAO.recover()
+        return render_template('tasks_view.html', jobs=jobs)
     else:
         return ans
 
@@ -281,6 +243,3 @@ def schedule_task(task_id):
     else:
         return ans
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-_load_jobs()
-print("\n\nJOBS>>", JOBS, "\n\n\n")

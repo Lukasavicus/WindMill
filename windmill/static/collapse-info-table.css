@@ -1,0 +1,32 @@
+tr td.terminal-ish {
+    padding-left: 50px;
+    background: #212529;
+    color: lightgreen;
+    border: none;
+    line-height: 50%;
+    height: 50%;
+    font-size: small;
+}
+
+tr td.terminal-ish-error {
+    padding-left: 50px;
+    background: #212529;
+    color: red;
+    border: none;
+    line-height: 50%;
+    height: 50%;
+    font-size: small;
+}
+
+tr td.terminal-ish::before {
+    content: ">>> ";
+}
+
+tr td.terminal-ish-error::before {
+    content: ">>> ";
+}
+
+i.not-allowed {
+    color: lightslategrey;
+    cursor: not-allowed;
+}

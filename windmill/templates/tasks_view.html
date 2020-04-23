@@ -8,7 +8,7 @@
     				<tr>
     					<th scope="col" colspan="4">TASK INFO</th>
     					<th scope="col" colspan="4">CRON</th>
-    					<th scope="col" colspan="7"></th>
+    					<th scope="col" colspan="6"></th>
     				</tr>
     			<tr>
     				<th scope="col">NAME</th>
@@ -18,26 +18,26 @@
     				<th scope="col">STATUS</th>
     				<th scope="col">CRON PARAMS</th>
     				<th scope="col"># RUNS</th>
-    				<th scope="col" colspan="7">TOOL PANEL</th>
+    				<th scope="col" colspan="6">TOOL PANEL</th>
     			</tr>
     			</thead>
     			<tbody>
-    			{% for task in tasks %}
+    			{% for job in jobs %}
     				<tr>
-    					<td>{{task["name"]}}</td>
-    					<td>{{task["entry_point"]}}</td>
-    					<td>{{task["started_at"]}}</td>
-    					<td>{{task["last_run"]}}</td>
-    					<td>{{task["last_exec_status"]}}</td>
-    					<td>{{task["cron"]}}</td>
-    					<td>{{task["no_runs"]}}</td>
-    					<td><i onclick='play({{task["_id"]}})' class="fa fa-play"></i></td>
-    					<td><i onclick='stop({{task["_id"]}})' class="fa fa-stop"></i></td>
-    					<td><i onclick='schedule({{task["_id"]}})' class="fa fa-calendar"></i></td>
-    					<td><i onclick="edit({{task["_id"]}});" class="fa fa-edit"></i></td>
-    					<td><i onclick='drop({{task["_id"]}});' class="fa fa-trash"></i></td>
-    					<td><i onclick="alert('hey');" class="fa fa-copy"></i></td>
-    					<td><i onclick='modal_info_click({{task["_id"]}})' data-toggle="modal" data-target="#modal-info" class="fa fa-info"></i></td>
+    					<td>{{job.name}}</td>
+    					<td>{{job.entry_point}}</td>
+    					<td>{{job.started_at}}</td>
+    					<td>{{job.last_run}}</td>
+    					<td>{{job.last_exec_status}}</td>
+    					<td>{{job.cron}}</td>
+    					<td>{{job.no_runs}}</td>
+    					<td><i onclick='play("{{job._id}}")' class="fa fa-play"></i></td>
+    					<td><i onclick='stop("{{job._id}}")' class="fa fa-stop"></i></td>
+    					<td><i onclick='schedule("{{job._id}}")' class="fa fa-calendar"></i></td>
+    					<td><i onclick='edit("{{job._id}}")' class="fa fa-edit"></i></td>
+    					<td><i onclick='drop("{{job._id}}");' class="fa fa-trash"></i></td>
+    					<td><i onclick='alert("hey")' class="fa fa-copy"></i></td>
+    					<!-- <td><i onclick='modal_info_click("{{job._id}}")' data-toggle="modal" data-target="#modal-info" class="fa fa-info"></i></td> -->
     				</tr>
     			{% endfor %}
     		</tbody>
@@ -165,5 +165,6 @@
     		</form>
     	</section>
     </div>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+	<script src="{{ url_for('static', filename='script.js') }}"></script>
+	<script src="{{ url_for('static', filename='modal_script.js') }}"></script>
 {% endblock %}
