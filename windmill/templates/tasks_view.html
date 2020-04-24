@@ -7,16 +7,16 @@
     			<thead>
     				<tr>
     					<th scope="col" colspan="4">TASK INFO</th>
-    					<th scope="col" colspan="4">CRON</th>
+    					<th scope="col" colspan="3">CRON</th>
     					<th scope="col" colspan="6"></th>
     				</tr>
     			<tr>
     				<th scope="col">NAME</th>
     				<th scope="col">ENTRY POINT</th>
     				<th scope="col">STARTED AT</th>
-    				<th scope="col">LAST RUN</th>
+    				<!-- <th scope="col">LAST RUN</th> -->
     				<th scope="col">STATUS</th>
-    				<th scope="col">CRON PARAMS</th>
+    				<th scope="col" class="col-lg">CRON PARAMS</th>
     				<th scope="col"># RUNS</th>
     				<th scope="col" colspan="6">TOOL PANEL</th>
     			</tr>
@@ -26,8 +26,8 @@
     				<tr>
     					<td>{{job.name}}</td>
     					<td>{{job.entry_point}}</td>
-    					<td>{{job.started_at}}</td>
-    					<td>{{job.last_run}}</td>
+    					<td>{{job.start_at}}</td>
+    					<!-- <td>{{job.last_run}}</td> -->
     					<td>{{job.last_exec_status}}</td>
     					<td>{{job.cron}}</td>
     					<td>{{job.no_runs}}</td>
@@ -42,7 +42,7 @@
     			{% endfor %}
     		</tbody>
     	</table>
-        {% if tasks|length == 0 %}
+        {% if jobs|length == 0 %}
             <div class="alert alert-dark" role="alert">
                 No Jobs created !
             </div>
@@ -71,7 +71,7 @@
     </div>
 
     <div class="container">
-    	<section id="create-jobs">
+    	<section id="create-jobs" style="padding-bottom: 100px;">
     		<form id="form-task" method="POST" action="/">
                 <input type="hidden" id="taskId" name="taskId" aria-describedby="taskId">
     			<div class = "row">
@@ -135,6 +135,15 @@
     			</div>
 
     			<div class="row align-items-center">
+					<!--
+					<div class="col-sm-1">
+    					<div class="form-group">
+    						<label for="taskCronNoExecs"># Execs</label>
+    						<input type="number" min=0 value=0 class="form-control" name="taskCronNoExecs" id="taskCronNoExecs">
+    					</div>
+					</div>
+					-->
+
     				<div class="col-sm-1">
     					<div class="form-group">
     						<label for="taskCronValueHours">Hours</label>

@@ -1,0 +1,55 @@
+BACKLOG:
+
+    Storage:
+        Save and Recover:
+            Virtual Environments
+            Folders and Files
+
+    Interface:
+        Footer
+        Better Design All Pages
+        Cross-Device
+
+    Funcionality:
+
+        Login:
+            Users (model and collection)
+            Login / Logout
+            User Preferences
+        
+        Jobs:
+            Tool Panel:
+                Copy Job
+                Flag Schedule (highlight schedule button when schedule is on)
+            
+            Schedule:
+                [OK] Start at
+                [OK] End at
+                [  ] Number of Runs
+                [OK] Hours / Minutes / Seconds
+    
+        Virtual Environments:
+            Update / Delete
+            Add Page
+                [+] /[-] buttons
+
+        Search (& Filter):
+            On Executions Page
+            On Jobs Page
+            On Projects Page
+            On Virtual Environments Page
+        
+        Forms:
+            On Jobs Page
+            On Projects Page
+            On Virtual Environments Page
+        
+        <>:
+            all routes that change the database need to return an operation confirmation
+    
+    Rules:
+        Do not allow Job edit after Job run (at least one time)
+        Do not allow play or schedule while job still running
+        Do not delete jobs. Jobs deleted will be marked as deleted, but still be available to Audit
+        Do not allow delete files on root folder for each virtual environment
+        On load for the very first time, garantee that all jobs are marked as 'Not Running'

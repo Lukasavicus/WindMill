@@ -25,7 +25,14 @@ tasks = Blueprint('tasks', __name__)
 # === HELPERS functions =======================================================
 @tasks.route('/test')
 def test():
-    return render_template('running_t.html')
+    sched = app.config['SCHEDULER']
+    print("#"*50, "\n\n")
+    print("ADDRS: ", hex(id(sched)))
+    alljobs = sched.get_jobs()
+    for j in alljobs:
+        print(j)
+    print("\n\n", sched.print_jobs(), "\n\n", "#"*50)
+    return "OK" #render_template('running_t.html')
     #return render_template('test.html')
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -35,10 +42,13 @@ def test():
 def _jobs_handler(request):
     try:
         if(request.method == "POST"):
-            #print("tasks", "home-POST", request.form)
+            print("tasks", "home-POST", request.form)
 
             job = Job(
-                    request.form['taskName'], __resolve_path(request.form['taskEntry'])
+                    request.form['taskName'], __resolve_path(request.form['taskEntry']),
+                    start_at=request.form['datetimepicker1_input'],
+                    end_at=request.form['datetimepicker2_input'], schd_hours=request.form['taskCronValueHours'],
+                    schd_minutes=request.form['taskCronValueMins'],schd_seconds=request.form['taskCronValueSecs']
                 )
             JobDAO.insert(job)
 
@@ -47,6 +57,7 @@ def _jobs_handler(request):
 
         elif(request.method == "GET"):
             print("jobs", "home-GET")
+        
         jobs_to_return = JobDAO.recover()
 
         return {'response' : app.config['SUCCESS'], 'data' : jobs_to_return}
@@ -68,7 +79,7 @@ def _play_task(job_id):
             job.play()
             
             print("tasks", "EXECUTING .. ", (os.path.join(app.config['UPLOAD_FOLDER'], job.entry_point)))
-            flash({'title' : "", 'msg' : f"Job {job.name} is now running", 'type' : MsgTypes['SUCCESS']})
+            flash({'title' : "", 'msg' : f"Job {job.name} executed successfully", 'type' : MsgTypes['SUCCESS']})
             return app.config['SUCCESS']
         else:
             flash({'title' : "Task Action", 'msg' : f"Job with id:{job_id} not found", 'type' : MsgTypes['ERROR']})
@@ -142,18 +153,22 @@ def api_task(job_id):
                 return app.config['SUCCESS']
 
             elif(request.method == "PUT"):
+                assert job.no_runs == 0, f"Could not update job '{job.name}' because this job already runned once"
 
-                # if('taskName' in request.form):
-                #     task["name"] = request.form['taskName']
-                # if('taskEntry' in request.form):
-                #     task["entry_point"] = __resolve_path(request.form['taskEntry'])
-                # task["cron"] = None
-                # task["status"] = "not running"
-                # task["started_at"] = datetime.now().strftime("%Y-%d-%m %H:%M:%S")
+                job.name = request.form['taskName'] if(request.form['taskName'].strip() != '') else job.name
+                job.entry_point = request.form['taskEntry'] if(request.form['taskEntry'].strip() != '') else job.entry_point
+                job.start_at = request.form['datetimepicker1_input'] if(request.form['datetimepicker1_input'].strip() != '') else job.start_at
+                job.end_at = request.form['datetimepicker2_input'] if(request.form['datetimepicker2_input'].strip() != '') else job.end_at
+                job.schd_hours = int(request.form['taskCronValueHours']) if(request.form['taskCronValueHours'].strip() != '') else job.schd_hours
+                job.schd_minutes = int(request.form['taskCronValueMins']) if(request.form['taskCronValueMins'].strip() != '') else job.schd_minutes
+                job.schd_seconds = int(request.form['taskCronValueSecs']) if(request.form['taskCronValueSecs'].strip() != '') else job.schd_seconds
 
+                JobDAO.update(job)
+
+                flash({'title' : "Task Action", 'msg' : f"Job '{job.name}' was updated", 'type' : MsgTypes['SUCCESS']})
                 return app.config['SUCCESS']
-                
-            if(request.method in ["DELETE", "GET", "PUT"]):
+
+            if(request.method in ["GET", "PUT"]): # "DELETE"
                 return jsonify(job.jsonify())
 
         else:

@@ -115,7 +115,7 @@ let ACTION_FORM = "POST";
 	}
 
 	document.querySelector("#submit-button").addEventListener('click', function(event){
-		alert('intercepted', ACTION_FORM);
+		//alert('intercepted', ACTION_FORM);
 		if(ACTION_FORM == "POST"){
 			console.log(this);
 			return true;
@@ -131,29 +131,18 @@ let ACTION_FORM = "POST";
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // === ACTIONS ====================================================
-
-	function action(action, task_id){
-		let actions = {
-			"play" : "/api/task/play",
-			"stop" : "/api/task/stop",
-			"schedule" : "/api/task/schedule"
-		};
-
-		console.log(action, task_id);
-		let req = new XMLHttpRequest();
-		req.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-				// Typical action to be performed when the document is ready:
-				//console.log(req.responseText);
-			}
-		};
-		req.open("GET", `${actions[action]}/${task_id}`);
-		req.send();
+	function play(task_id){
+		notify(`Playing Job with id: ${task_id}`);
+		fetch(`/api/task/play/${task_id}`).then(response => console.log(response.json()));
 	}
-
-	function play(task_id){ action("play", task_id); }
-	function stop(task_id){ action("stop", task_id); }
-	function schedule(task_id){ action("schedule", task_id); }
+	function stop(task_id){
+		notify(`Stoping Job with id: ${task_id}`);
+		fetch(`/api/task/stop/${task_id}`).then(response => console.log(response.json()));
+	}
+	function schedule(task_id){
+		notify(`Scheduling Job with id: ${task_id}`);
+		fetch(`/api/task/schedule/${task_id}`).then(response => console.log(response.json()));
+	}
 	function drop(task_id){
 		fetch(`/api/task/${task_id}`, {
 			method: 'DELETE'
@@ -202,10 +191,10 @@ let ACTION_FORM = "POST";
 			form.querySelector("#taskCronValueHours").value = date["hours"];
 			form.querySelector("#customSwitch1").checked = true;
 
-			let v = task["entry"].split("/"); //\\
+			//let v = task["entry"].split("/"); //\\
 			
-			let path = "/" + v[0];
-			let filename = v[1];
+			let path = "/" + task["path_to_entry_point"]; //v[0]
+			let filename = task["file_of_entry_point"]; //v[1]
 
 			let entry = form.querySelector("#taskEntry");
 			get_paths(path).then(() =>
@@ -230,7 +219,22 @@ let ACTION_FORM = "POST";
 			method: 'PUT',
 			body: formData
 
-		}).then(response => console.log(response.json()));
+		})
+		.then(response => console.log(response.json()))
+		.catch(response => console.log(response.json()));
+	}
+
+	function notify(title=null, msg, msg_type){
+		div = document.createElement('div');
+		div.classList.add('alert', `alert-${msg_type}`, 'alert-dismissible', 'fade', 'show');
+		div.setAttribute('role', 'alert');
+		div.innerHTML = `
+			<strong>${title}</strong> ${msg}
+			<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+				<span aria-hidden="true">&times;</span>
+			</button>
+		`;
+		document.querySelector('#messaging').appendChild(div);
 	}
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

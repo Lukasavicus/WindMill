@@ -42,3 +42,9 @@ About SQL & NoSQL in Flask:
 	https://www.google.com/search?q=python+flaks+mongodb+and+orm&oq=python+flaks+mongodb+and+orm&aqs=chrome..69i57j0l4.7797j0j4&sourceid=chrome&ie=UTF-8
 	https://www.youtube.com/channel/UC-QDfvrRIDB6F0bIO4I4HkQ/playlists
 	https://www.youtube.com/watch?v=3ZS7LEH_XBg
+
+APScheduler:
+https://apscheduler.readthedocs.io/en/v2.1.2/modules/scheduler.html
+https://apscheduler.readthedocs.io/en/v2.1.2/intervalschedule.html
+https://apscheduler.readthedocs.io/en/v3.6.3/userguide.html#adding-jobs
+https://apscheduler.readthedocs.io/en/v2.1.2/index.html#job-options

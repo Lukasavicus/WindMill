@@ -1,7 +1,7 @@
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <div class="container">
-    	<section id="messaging">
+<div class="container">
+	<section id="messaging">
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
 			{% for message in messages %}
 				<div class="alert alert-{{ message['type'] }} alert-dismissible fade show" role="alert">
 					<strong>{{ message['title'] }}</strong>   {{ message['msg'] }}
@@ -10,7 +10,7 @@
 					</button>
 				</div>
 			{% endfor %}
-    	</section>
-    </div>
-  {% endif %}
-{% endwith %}
+		{% endif %}
+	{% endwith %}
+	</section>
+</div>

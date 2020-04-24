@@ -4,11 +4,12 @@ import datetime
 from bson.objectid import ObjectId
 import platform
 
+from apscheduler.schedulers.blocking import BlockingScheduler
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 from flask_pymongo import PyMongo
-
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 
@@ -61,6 +62,9 @@ def create_app(test_config=None):
     #app.config['UPLOAD_FOLDER'] = os.path.join('windmill', 'uploads')
     app.config['UPLOAD_FOLDER'] =  os.path.join(app.root_path, 'uploads')
     app.config['python_cmd'] = 'python' if platform.system() == 'Windows' else 'python3'
+
+    app.config['SCHEDULER'] = BlockingScheduler()
+    print(hex(id(app.config['SCHEDULER'])))
 
     return app
 
