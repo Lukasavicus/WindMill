@@ -6,7 +6,7 @@ table .table {
 	font-size: 14px
 }
 
-td i {
+td i .fa{
 	cursor: pointer;
 }
 
@@ -17,3 +17,25 @@ td i.fa.fa-edit:hover { color : #ffc107; }
 td i.fa.fa-trash:hover { color : #69030d; }
 td i.fa.fa-copy:hover { color : #6c757d; }
 td i.fa.fa-info:hover { color : #007bff; }
+
+.table td.fit, 
+.table th.fit {
+    white-space: nowrap;
+    width: 1%;
+}
+
+.footer{
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+	background: #6cf;
+	display: block;
+}
+
+/*
+footer p {
+	height: 80px;
+	color: white;
+}
+*/

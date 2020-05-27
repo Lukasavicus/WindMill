@@ -27,6 +27,7 @@
 						</td>
 						<td>
 							<select class="form-control" name="pkgSpecifier0">
+								<option value="">  </option>
 								<option value="==">==</option>
 								<option value=">=">>=</option>
 								<option value="<="><=</option>
@@ -70,13 +71,28 @@
 						if(data){
 							requirements = data.split('\n');
 							requirements_dict = requirements.map((req) => {
-								let mtc = req.match(/==|>=|<=|~=|!=/);
-								if(mtc == null)
-									return null;
 								let requirement = {};
-								requirement['specifier'] = mtc[0];
-								requirement['pkg_name'] = req.substr(0, mtc['index']);
-								requirement['pkg_version'] = req.substr((mtc['index'] + 2));
+
+								let pkg_name = req;
+								let pkg_version = "";
+								let matcher = req.match(/==|>=|<=|~=|!=/);
+								let mtc = "";
+
+								// version is not specified
+								if(matcher != null){
+									pkg_name = req.substr(0, matcher['index']);
+									pkg_version = req.substr((matcher['index'] + 2));
+									mtc = matcher[0];
+								}
+								
+								requirement['specifier'] = mtc;
+								requirement['pkg_name'] = pkg_name;
+								requirement['pkg_version'] = pkg_version;
+
+								console.log(pkg_name, pkg_name == null)
+
+								if(pkg_name == null)
+									return null;
 								return requirement;
 							})
 							.filter((req) => req);
@@ -91,6 +107,7 @@
 									</td>
 									<td>
 										<select class="form-control" name="pkgSpecifier${i}">
+											<option value="==" ${ (req['specifier'] == "")   ? 'selected' : ''} >  </option>
 											<option value="==" ${ (req['specifier'] == "==") ? 'selected' : ''} >==</option>
 											<option value=">=" ${ (req['specifier'] == ">=") ? 'selected' : ''} >>=</option>
 											<option value="<=" ${ (req['specifier'] == "<=") ? 'selected' : ''} ><=</option>

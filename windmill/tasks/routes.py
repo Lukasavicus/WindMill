@@ -58,7 +58,13 @@ def _jobs_handler(request):
         elif(request.method == "GET"):
             print("jobs", "home-GET")
         
-        jobs_to_return = JobDAO.recover()
+        try:
+            jobs_to_return = JobDAO.recover()
+        except Exception as e:
+            jobs_to_return = []
+            flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        
+        print(f"jobs_to_return {len(jobs_to_return)}")
 
         return {'response' : app.config['SUCCESS'], 'data' : jobs_to_return}
     except Exception as e:

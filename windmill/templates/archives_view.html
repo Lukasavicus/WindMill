@@ -34,7 +34,7 @@
 	                    	{% endif %}
 	                	</td>
 	                	<td>
-		                	{% if isRoot %}
+		                	{% if isRoot and file_info['file_folder_flag'] %}
 		                    	<i onclick="delete_dir('{{file_info['path']}}');" style="cursor: pointer;" class="fa fa-trash"></i>
 		                    {% endif %}
 	                    </td>

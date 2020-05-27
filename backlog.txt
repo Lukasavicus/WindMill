@@ -32,6 +32,7 @@ BACKLOG:
             Update / Delete
             Add Page
                 [+] /[-] buttons
+            Fix bugs (packages without version should be allowed)
 
         Search (& Filter):
             On Executions Page

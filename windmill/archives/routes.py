@@ -85,7 +85,10 @@ def _dir_listing(req_path=''):
     #print("archives", "resource_tree", resource_tree, " or ", req_path.split('/'), "  -- >", os.path.sep)
     for i, resource_tree_element in enumerate(resource_tree):
         #print("archives", "resource_tree_element", resource_tree_element)
-        locations.append({'name' : resource_tree_element, 'path' : (uri_sep + 'fs' + uri_sep + uri_sep.join(resource_tree[:i+1]))})
+        locations.append({
+                'name' : resource_tree_element,
+                'path' : (uri_sep + 'fs' + uri_sep + uri_sep.join(resource_tree[:i+1]))
+            })
 
     isRoot = len(resource_tree) == 1 and resource_tree[0] != ''
     folderEnv = len(resource_tree) == 1 and resource_tree[0] == ''
