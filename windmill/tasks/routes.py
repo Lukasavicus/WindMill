@@ -21,9 +21,10 @@ from windmill.models import Job, JobDAO
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 tasks = Blueprint('tasks', __name__)
+context = "apl-wm-crm"
 
 # === HELPERS functions =======================================================
-@tasks.route('/test')
+@tasks.route(f'/{context}/apl-wm-crm/test')
 def test():
     sched = app.config['SCHEDULER']
     print("#"*50, "\n\n")
@@ -61,8 +62,9 @@ def _jobs_handler(request):
         try:
             jobs_to_return = JobDAO.recover()
         except Exception as e:
-            jobs_to_return = []
+            print(f"Exception throwed: {e}")
             flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+            return {'response' : app.config['ERROR'], 'err' : e}
         
         print(f"jobs_to_return {len(jobs_to_return)}")
 
@@ -135,7 +137,7 @@ def _schedule_task(job_id):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === API routes ==============================================================
-@tasks.route('/api/tasks/', methods=["GET","POST"])
+@tasks.route(f'/{context}/api/tasks/', methods=["GET","POST"])
 def api_tasks():
     ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
@@ -147,7 +149,7 @@ def api_tasks():
     else:
         return ans
 
-@tasks.route('/api/task/<job_id>', methods=["DELETE", "GET", "PUT"])
+@tasks.route(f'/{context}/api/task/<job_id>', methods=["DELETE", "GET", "PUT"])
 def api_task(job_id):
     try:
         print("tasks", "TASK -> ", request.method, " --> ", job_id)
@@ -187,7 +189,7 @@ def api_task(job_id):
         print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
-@tasks.route('/api/task/info/<job_id>')
+@tasks.route(f'/{context}/api/task/info/<job_id>')
 def api_info_task(job_id):
     try:
         print("tasks", "INFO invoked")
@@ -203,7 +205,7 @@ def api_info_task(job_id):
         print("tasks", "INTERNAL ERROR", e)
         return abort(500)
 
-@tasks.route('/api/task/play/<job_id>')
+@tasks.route(f'/{context}/api/task/play/<job_id>')
 def api_play_task(job_id):
     ans = _play_task(job_id)
     print("tasks", "PLAY return", ans, app.config['SUCCESS'], ans == app.config['SUCCESS'])
@@ -212,7 +214,7 @@ def api_play_task(job_id):
     else:
         return ans
 
-@tasks.route('/api/task/stop/<job_id>')
+@tasks.route(f'/{context}/api/task/stop/<job_id>')
 def api_stop_task(job_id):
     ans = _stop_task(job_id)
     if(ans == app.config['SUCCESS']):
@@ -220,7 +222,7 @@ def api_stop_task(job_id):
     else:
         return ans
 
-@tasks.route('/api/task/schedule/<task_id>')
+@tasks.route(f'/{context}/api/task/schedule/<task_id>')
 def api_schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):
@@ -231,16 +233,15 @@ def api_schedule_task(task_id):
 
 
 # === Application routes ======================================================
-@tasks.route('/', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
+@tasks.route(f'/{context}/', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
     ans = _jobs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
-        jobs = JobDAO.recover()
-        return render_template('tasks_view.html', jobs=jobs)
+        return render_template('tasks_view.html', jobs=ans['data'])
     else:
-        return ans
+        return render_template('tasks_view.html', err=ans['err'])
 
-@tasks.route('/task/play/<int:task_id>')
+@tasks.route(f'/{context}/task/play/<int:task_id>')
 def play_task(task_id):
     ans = _play_task(task_id)
     if(ans == app.config['SUCCESS']):
@@ -248,7 +249,7 @@ def play_task(task_id):
     else:
         return ans
 
-@tasks.route('/task/stop/<int:task_id>')
+@tasks.route(f'/{context}/task/stop/<int:task_id>')
 def stop_task(task_id):
     ans = _stop_task(task_id)
     if(ans == app.config['SUCCESS']):
@@ -256,7 +257,7 @@ def stop_task(task_id):
     else:
         return ans
 
-@tasks.route('/task/schedule/<int:task_id>')
+@tasks.route(f'/{context}/task/schedule/<int:task_id>')
 def schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):

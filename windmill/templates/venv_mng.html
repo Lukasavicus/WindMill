@@ -133,12 +133,38 @@
 			document.getElementById('req_loader').addEventListener('change', handleFileSelect, false);
 
 			function add(row_idx){
-
+				let tbody = document.getElementById('req-table-body');
+				// Create an empty <tr> element and add it to the 1st position of the table:
+				var row = tbody.insertRow(tbody.childElementCount);
+				row.innerHTML = `
+				<tr>
+						<td>
+							<input type="text" class="form-control" id="pkgName" name="pkgName0" aria-describedby="pkgName" placeholder="Package name">
+						</td>
+						<td>
+							<select class="form-control" name="pkgSpecifier0">
+								<option value="">  </option>
+								<option value="==">==</option>
+								<option value=">=">>=</option>
+								<option value="<="><=</option>
+								<option value="~=">~=</option>
+								<option value="!=">!=</option>
+							</select>
+						</td>
+						<td>
+							<input type="text" class="form-control" id="pkgVersion" name="pkgVersion0" aria-describedby="pkgVersion" placeholder="Package version">
+						</td>
+						<td><i class="far fa-plus-square" onclick="add(${tbody.childElementCount})"></i></td>
+						<td><i class="far fa-minus-square" onclick="remove(${tbody.childElementCount})"></i></td>
+					</tr>
+				`;
 			}
 
 			function remove(row_idx){
-				if(row_idx == 0){
-
+				row_idx--;
+				let tbody = document.getElementById('req-table-body');
+				if(row_idx != 0 && tbody.childElementCount > 1){
+					tbody.deleteRow(row_idx);
 				}
 			}
 		</script>

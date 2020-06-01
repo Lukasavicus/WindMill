@@ -1,5 +1,5 @@
 # https://docs.python.org/3/library/typing.html
-from typing import Final
+#from typing import Final # restriction on Python > 3.8
 
 import sys, os, platform, psutil
 import subprocess as sub
@@ -346,8 +346,11 @@ class Agent:
         This class represents in a high-level way the agent that execute some job
         directly or scheduled
     """
-    PIPENV_CMD:Final = "pipenv" # define the string that represents the pipenv command
-    PYTHON_CMD:Final = "python" if platform.system() == "Windows" else "python3" # define the string that represents the python command
+    #PIPENV_CMD:Final = "pipenv" # define the string that represents the pipenv command
+    #PYTHON_CMD:Final = "python" if platform.system() == "Windows" else "python3" # define the string that represents the python command
+
+    PIPENV_CMD = "pipenv" # define the string that represents the pipenv command
+    PYTHON_CMD = "python" if platform.system() == "Windows" else "python3" # define the string that represents the python command
 
     def __init__(self, connection, job):
         self.connection:MongoClient = connection
@@ -361,6 +364,7 @@ class Agent:
         self.no_interval = 30 #no_interval
 
     def execute_job(self):
+        print("executing job")
         # TODO: database name and collection name should be parameters
         runs_collection = self.connection.db.runs
 
@@ -368,12 +372,16 @@ class Agent:
         self.run._id = RunDAO.insert(self.run)
         
         folder_path = os.path.sep.join(os.path.split(self.job.entry_point)[:-1])
-        script_folder = os.path.join(self.base_path, folder_path )
+        script_folder = os.path.join(self.base_path, folder_path)
         script_file = os.path.split(self.job.entry_point)[-1]
+
+        #print("EXEC:", f"{Agent.PIPENV_CMD} run {Agent.PYTHON_CMD} -u {script_file}", " ON: ", script_folder)
         
         # Trigger the run of a job in a form of a new subprocess (executing with pipenv to isolate the virtual enviroments)
         process = sub.Popen(f"{Agent.PIPENV_CMD} run {Agent.PYTHON_CMD} -u {script_file}", stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True, cwd=script_folder)
         
+        #print("process:", process)
+
         # Update the job info with status "RUNNING"
         self.job.pid = process.pid
         JobDAO.update_when_running(self.job)
@@ -461,6 +469,102 @@ class Agent:
         except:
             return None
         return process
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+class Package:
+    _id = None
+
+    def __init__(self, name, version_specifier="", version=""):
+        self.name = name
+        self.version_specifier = version_specifier
+        self.version = version
+    
+    def __repr__(self):
+        return f"{{'name' : '{self.name}', 'version_specifier' : '{self.version_specifier}', 'version' : '{self.version}' }}"
+
+class VEnvironment:
+    _id = None
+
+    def __init__(self, _id, name, packages = []):
+        self._id = _id
+        self.name = name
+        self.packages = packages
+    
+    def add_package(self, package):
+        if(package not in self.packages):
+            self.packages.append(package)
+
+    def remove_package(self, package):
+        if(package in self.packages):
+            self.packages.remove(package)
+
+    def update_package(self, package):
+        pkgs_list  = list(filter(lambda pkg : pkg.name == package.name), self.packages)
+
+        if(pkgs_list != None):
+            pkg_to_update = pkgs_list[0]
+
+        self.packages.remove(pkg_to_update)
+        self.packages.append(package)
+
+    def jsonify(self):
+        return { '_id': self._id, 'name' : self.name, 'packages' : self.packages }
+
+    def __repr__(self):
+        return f"VENV: id[{self._id}] name[{self.name}]"
+
+
+# === VEnvironment - Data Access Object =======================================
+class VEnvironmentDAO():
+    def __init__(self):
+        Exception('This class should not be instantiated')
+
+    @staticmethod
+    def _new_venv(venv_item):
+        return VEnvironment(venv_item["_id"], venv_item["name"])#, venv_item["packages"])
+    
+    @staticmethod
+    def _new_venv_list(venv_list):
+        if(len(venv_list) == 0):
+            return None
+        else:
+            venvs = []
+            for venv_item in venv_list:
+                venvs.append(VEnvironmentDAO._new_venv(venv_item))
+            return venvs
+    
+    @staticmethod
+    def insert(venv):
+        print(venv.packages, type(venv.packages))
+        pkgs = [f"{pkg}" for pkg in venv.packages]
+        mongo.db.venvs.insert({
+            'name' : venv.name,
+            'packages' : pkgs
+        })
+
+    @staticmethod
+    def update(venv):
+        mongo.db.venvs.find_one_and_update(
+            {
+                { '_id': venv._id }
+            },
+            { '$set' : { 'name' : venv.name, 'packages' : venv.packages } },
+            #upsert = True
+        )
+
+    @staticmethod
+    def delete(id):
+        return mongo.db.venvs.delete_one( {"_id": ObjectId(id)})
+
+
+    @staticmethod
+    def recover():
+        venv_list = list(mongo.db.venvs.find({}))
+        return VEnvironmentDAO._new_venv_list(venv_list)
+
+    @staticmethod
+    def recover_by_id(id):
+        return mongo.db.venvs.find_one({"_id" : ObjectId(id)})
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # if(__name__ == '__main__'):

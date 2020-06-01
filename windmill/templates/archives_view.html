@@ -6,7 +6,7 @@
 	        <nav aria-label="breadcrumb">
 	            <ol class="breadcrumb">
 	                {% for local in locations %}
-	                    <li class="breadcrumb-item"><a href="{{local['path']}}">{{local['name']}}</a></li>
+	                    <li class="breadcrumb-item"><a href="/apl-wm-crm{{local['path']}}">{{local['name']}}</a></li>
 	                {% endfor %}
 	            </ol>
 	        </nav>
@@ -21,7 +21,7 @@
 				<tbody>
 	            {% for file_info in files_info %}
 					<tr>
-	                    <td><a href="/fs/{{ file_info['path'] }}">{{ file_info['name'] }}</a></td>
+	                    <td><a href="/apl-wm-crm/fs/{{ file_info['path'] }}">{{ file_info['name'] }}</a></td>
 	                    <td>
 	                    	{% if file_info['file_folder_flag'] %}
 	                    		{% if folderEnv %}

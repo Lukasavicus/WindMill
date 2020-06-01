@@ -10,6 +10,10 @@ td i .fa{
 	cursor: pointer;
 }
 
+td i .far{
+	cursor: pointer;
+}
+
 td i.fa.fa-play:hover { color : #28a745; }
 td i.fa.fa-stop:hover { color : #dc3545; }
 td i.fa.fa-calendar:hover { color : #d99d11; }

@@ -1,6 +1,6 @@
 function get_paths(path=''){
 
-	const base_path = '/api/fs';
+	const base_path = '/apl-wm-crm/api/fs';
 
 	let path_to_fetch = base_path + path;
 
@@ -12,7 +12,7 @@ function get_paths(path=''){
 	})
 	.then(data => {
 		set_select(data['files_info']);
-		set_breadcrumbs(data['locations']);
+		//set_breadcrumbs(data['locations']);
 	});
 }
 

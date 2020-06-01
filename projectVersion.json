@@ -1,0 +1,10 @@
+{
+  "name": "apl-wm-crm",
+  "version": "1.0.13",
+  "description": "CRM WM",
+  "author": "Banco Safra",
+  "license": "NONE",
+  "dependencies": {
+    "json": "9.0.6"
+  }
+}

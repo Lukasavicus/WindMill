@@ -16,9 +16,40 @@ import json
 from werkzeug.utils import secure_filename
 
 from windmill.main.utils import trace, divisor, MsgTypes
+
+from windmill.models import VEnvironment, VEnvironmentDAO, Package
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 venvironments = Blueprint('venvironments', __name__)
+context = "apl-wm-crm"
+
+import threading
+import subprocess
+
+def popen_and_call(on_exit, cmd, cwd): #, venv_name
+    """
+    Runs the given args in a subprocess.Popen, and then calls the function
+    on_exit when the subprocess completes.
+    on_exit is a callable object, and popen_args is a list/tuple of args that 
+    would give to subprocess.Popen.
+    """
+    def run_in_thread(on_exit, cmd, cwd): #, venv_name
+        print(f"I WILL WAIT - {cmd} - {cwd}")
+        proc = sub.Popen(cmd, cwd=cwd)
+        proc.wait()
+        print("WAIT IS OVER")
+        on_exit(cwd) #, venv_name
+    thread = threading.Thread(target=run_in_thread, args=(on_exit, cmd, cwd)) # , venv_name
+    thread.start()
+    # returns immediately after the thread starts
+    return thread
+
+def _add_packages_installed(folder):
+    print("="*100, "\n\natualizando...\n\n", "="*100)
+    pkgs = _get_packages(folder)
+    venv_name = "env"
+    venv = VEnvironment(venv_name, pkgs)
+    return VEnvironmentDAO.insert(venv)
 
 def _get_packages(foldername):
     """
@@ -43,21 +74,84 @@ def _get_packages(foldername):
         if(len(pkg_list) > 0):
             pkgs = [{'name' : pkg, 'version' : pkgs_data['default'][pkg]['version']} for pkg in pkg_list]
     except Exception as e:
-        flash({'title' : "Virtual Env", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        #flash({'title' : "Virtual Env", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("venvs", "INTERNAL ERROR", e)
-        return abort(404)
+        return []#abort(404)
     return pkgs
 
+def _get_venvs():
+    """
+        Function that based on a directory :BASE_DIR: recover all virtual
+        environments
+    """
+    BASE_DIR = app.config['UPLOAD_FOLDER']
+    folders = os.listdir(BASE_DIR)
+
+    venvs = VEnvironmentDAO.recover()
+    print(venvs)
+
+    venvs = [{
+        'id' : venvs[0]._id,
+        'name' : folder,
+        'pkgs' : _get_packages(os.path.join(BASE_DIR, folder)),
+        'associated_archives' : list(
+            filter(
+                lambda resource : os.path.isdir(os.path.join(BASE_DIR, folder, resource)),
+                os.listdir(os.path.join(BASE_DIR, folder))
+            ))
+        } for folder in folders]
+    
+    return venvs
+
+def _new_virtual_environment(req_form):
+    """
+        Function that make a new virtual environment object based on data sent
+        in the request form.
+    """
+    venv = VEnvironment(req_form['venvName'])
+    i = 0
+    while True:
+        if(('pkgName'+str(i)) in req_form):
+            pkg_name = ('pkgName'+str(i))
+            pkg_specifier = ('pkgSpecifier'+str(i))
+            pkg_version = ('pkgVersion'+str(i))
+            if(req_form[pkg_name] != ""):
+                venv.add_package(Package(
+                    req_form[pkg_name],
+                    req_form[pkg_specifier],
+                    req_form[pkg_version],
+                ))
+        else:
+            break
+        i += 1
+    return venv
+
+def _make_requirements(foldername, virtual_env_obj):
+    """
+        Function that build the 'requirements.txt' file used to create a
+        virtual environment by the PIPENV, based on :virtual_env_obj: object.
+    """
+    requirements_filename = os.path.join(foldername, 'requirements.txt')
+    with open(requirements_filename, 'w') as requirement_file:
+        for pkg in virtual_env_obj.packages:
+            requirement = "{}{}{}\n".format(
+                pkg.name, pkg.version_specifier, pkg.version,
+            )
+            #print("\n\n>",pkg.name], "<->",pkg.version], "<-[", str(i) ,"]\n\n")
+            requirement_file.write(requirement)
+    return requirements_filename
+    
 
 # === Application routes ======================================================
-@venvironments.route('/environments/add')
+@venvironments.route(f'/{context}/environments/add')
 def environments_add():
     """
-        Route to the view that renders the page to input a new virtual environment
+        Route to the view that renders the page to input a new virtual
+        environment
     """
     return render_template('venv_mng.html')
 
-@venvironments.route('/environments', methods=["GET","POST"])
+@venvironments.route(f'/{context}/environments', methods=["GET","POST"])
 def environments():
     """
         Route to handles with:
@@ -75,43 +169,24 @@ def environments():
             full_foldername = os.path.join(app.config['UPLOAD_FOLDER'], foldername)
             os.mkdir(full_foldername)
 
-            i = 0
-            full_filename = os.path.join(full_foldername, 'requirements.txt')
-            with open(full_filename, 'w') as file:
-                while True:
-                    if(('pkgName'+str(i)) in request.form):
-                        pkg_name = ('pkgName'+str(i))
-                        pkg_specifier = ('pkgSpecifier'+str(i))
-                        pkg_version = ('pkgVersion'+str(i))
-                        if(request.form[pkg_name] != "" and request.form[pkg_version] != ""):
-                            requirement = "{}{}{}\n".format(
-                                request.form[pkg_name],
-                                request.form[pkg_specifier],
-                                request.form[pkg_version],
-                            )
-                            #print("\n\n>",request.form[pkg_name], "<->",request.form[pkg_version], "<-[", str(i) ,"]\n\n")
-                            file.write(requirement)
-                    else:
-                        break
-                    i += 1
-            p = sub.Popen(["pipenv", "install", "-r", full_filename], cwd=full_foldername)
+            venv = _new_virtual_environment(request.form)
+            print("So far so good")
+            requirements_filename = _make_requirements(full_foldername, venv)
+            
+            #p = sub.Popen(["pipenv", "install", "-r", requirements_filename], cwd=full_foldername)
+
+            #val = popen_and_call(_add_packages_installed, ["pipenv", "install", "-r", requirements_filename], full_foldername, venv.name)
+            popen_and_call(_add_packages_installed, ["pipenv", "install", "-r", requirements_filename], full_foldername)
+
             flash({'title' : "Virtual Env", 'msg' : "Virtual Env {} created successfully".format(full_foldername), 'type' : MsgTypes['SUCCESS']})
+            
             return redirect(url_for('tasks.home')) #redirect('/') #render_template('running.html', tasks=tasks)
+
         elif(request.method == "GET"):
             print("venvs", "GET")
-            BASE_DIR = app.config['UPLOAD_FOLDER']
-            folders = os.listdir(BASE_DIR)
-            venvs = [{
-                'name' : folder,
-                'pkgs' : _get_packages(os.path.join(BASE_DIR, folder)),
-                'associated_archives' : list(
-                    filter(
-                        lambda resource : os.path.isdir(os.path.join(BASE_DIR, folder, resource)) ,
-                        os.listdir(os.path.join(BASE_DIR, folder))
-                    ))
-                } for folder in folders]
-            #print("venvs", "ARCHIVES", venvs)
-            return render_template('venvs.html', venvs=venvs)#jsonify(venvs)
+            venvs = _get_venvs()
+            return render_template('venvs.html', venvs=venvs)
+
         flash({'title' : "Virtual Env", 'msg' : "/packages  does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
         return abort(404)
     except Exception as e:
@@ -119,51 +194,37 @@ def environments():
         print("venvs", "INTERNAL ERROR", e)
         return abort(500)
 
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-# -----------------------------------------------------------------------------
-# @deprecated - but could be usefull
-@venvironments.route('/packages/system')
-def packages_system():
-    sub.Popen(["pip", "freeze"], stdout=sub.PIPE, shell=True)
-    (out, err) = proc.communicate()
-    pkgs = out.decode("utf-8").split('\n')
-    pkgs = [p.strip() for p in pkgs]
-    return jsonify(pkgs)
 
-# @deprecated - but could be usefull
-@venvironments.route('/packages/script')
-def packages_script():
-    from modulefinder import ModuleFinder
-    scr = 'uploads\clientes\clientes_etl.py' # should be a parameter
-    finder = ModuleFinder()
-    finder.run_script(scr)
-    m = finder.modules.items()
-    pkgs = {}
-    for k, v in m:
-        pkgs[k] = ','.join(list(v.globalnames.keys())[:3])
-    return jsonify(pkgs)
+# === Application routes ======================================================
+@venvironments.route(f'/{context}/api/environment/<venv_id>', methods=["DELETE", "GET", "PUT"])
+def api_venv(venv_id):
+    try:
+        print("venvs", "VENV -> ", request.method, " --> ", venv_id)
+        venv = VEnvironmentDAO.recover_by_id(venv_id)
+        print("\n\n", venv, "\n\n")
+        if(venv != None):
+            if(request.method == "DELETE"):
+                print(f"VENV DELETE: {venv_id}")
+                #VenvDAO.delete(venv)
+                return app.config['SUCCESS']
 
-# @deprecated - but could be usefull
-@venvironments.route('/packages/dis')
-def packages_dis():
-    import dis
-    from pprint import pprint
-    from collections import defaultdict
-    scr = 'uploads\clientes\clientes_etl.py' # should be a parameter
-    lines = ""
-    with open(scr) as file:
-        lines = file.readlines()
+            elif(request.method == "PUT"):
+                # _new_virtual_environment()
+                flash({'title' : "Venv Action", 'msg' : f"Venv '{venv.name}' was updated", 'type' : MsgTypes['SUCCESS']})
+                return app.config['SUCCESS']
 
-    file_content = ''.join(lines)
-    #print(file_content)
+            if(request.method in ["GET", "PUT"]): # "DELETE"
+                return jsonify(venv.jsonify())
 
-    instructions = dis.get_instructions(file_content)
-    imports = [__ for __ in instructions if 'IMPORT' in __.opname]
-
-    grouped = defaultdict(list)
-    for instr in imports:
-        grouped[instr.opname].append(instr.argval)
-
-    pprint(grouped)
-    return jsonify(grouped)
+        else:
+            flash({'title' : "Venv Action", 'msg' : f"Venv id:{venv_id} could not be found", 'type' : MsgTypes['ERROR']})
+            return abort(404)
+        flash({'title' : "Venvs", 'msg' : "/api/venv does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
+        return abort(405)
+    except Exception as e:
+        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
+        print("tasks", "INTERNAL ERROR", e)
+        return abort(500)
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

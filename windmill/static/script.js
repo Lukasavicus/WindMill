@@ -16,7 +16,7 @@ let ACTION_FORM = "POST";
 // === BREADCRUMBS SELECTION ======================================
 	function get_paths(path=''){
 
-		const base_path = '/api/fs';
+		const base_path = '/apl-wm-crm/api/fs';
 
 		let path_to_fetch = base_path + path;
 
@@ -93,7 +93,7 @@ let ACTION_FORM = "POST";
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 // === USEFULL ====================================================
-	fetch("/api/tasks/")
+	fetch("/apl-wm-crm/api/tasks/")
 		.then(response => {
 			if(response.ok){
 				return response.json();
@@ -132,19 +132,19 @@ let ACTION_FORM = "POST";
 
 // === ACTIONS ====================================================
 	function play(task_id){
-		notify(`Playing Job with id: ${task_id}`);
-		fetch(`/api/task/play/${task_id}`).then(response => console.log(response.json()));
+		notify(`Playing Job with id: ${task_id}`, 'success');
+		fetch(`/apl-wm-crm/api/task/play/${task_id}`).then(response => console.log(response.json()));
 	}
 	function stop(task_id){
-		notify(`Stoping Job with id: ${task_id}`);
-		fetch(`/api/task/stop/${task_id}`).then(response => console.log(response.json()));
+		notify(`Stoping Job with id: ${task_id}`, 'success');
+		fetch(`/apl-wm-crm/api/task/stop/${task_id}`).then(response => console.log(response.json()));
 	}
 	function schedule(task_id){
-		notify(`Scheduling Job with id: ${task_id}`);
-		fetch(`/api/task/schedule/${task_id}`).then(response => console.log(response.json()));
+		notify(`Scheduling Job with id: ${task_id}`, 'success');
+		fetch(`/apl-wm-crm/api/task/schedule/${task_id}`).then(response => console.log(response.json()));
 	}
 	function drop(task_id){
-		fetch(`/api/task/${task_id}`, {
+		fetch(`/apl-wm-crm/api/task/${task_id}`, {
 			method: 'DELETE'
 		}).then(response => console.log(response.json()));
 	}
@@ -177,7 +177,7 @@ let ACTION_FORM = "POST";
 		document.querySelector("#submit-button").innerText = "Update";
 		document.querySelector("#taskId").value = task_id;
 
-		fetch(`/api/task/${task_id}`)
+		fetch(`/apl-wm-crm/api/task/${task_id}`)
 		.then(response => response.json())
 		.then(task =>{
 			let form = document.querySelector("form");
@@ -189,7 +189,7 @@ let ACTION_FORM = "POST";
 			form.querySelector("#taskCronValueSecs").value = date["seconds"];
 			form.querySelector("#taskCronValueMins").value = date["minutes"];
 			form.querySelector("#taskCronValueHours").value = date["hours"];
-			form.querySelector("#customSwitch1").checked = true;
+			//form.querySelector("#customSwitch1").checked = true;
 
 			//let v = task["entry"].split("/"); //\\
 			
@@ -215,7 +215,7 @@ let ACTION_FORM = "POST";
 
 		console.log(">>", formData);
 
-		fetch(`/api/task/${task_id}`, {
+		fetch(`/apl-wm-crm/api/task/${task_id}`, {
 			method: 'PUT',
 			body: formData
 
@@ -224,7 +224,7 @@ let ACTION_FORM = "POST";
 		.catch(response => console.log(response.json()));
 	}
 
-	function notify(title=null, msg, msg_type){
+	function notify(msg, msg_type, title=""){
 		div = document.createElement('div');
 		div.classList.add('alert', `alert-${msg_type}`, 'alert-dismissible', 'fade', 'show');
 		div.setAttribute('role', 'alert');

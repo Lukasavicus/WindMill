@@ -41,7 +41,7 @@
 
 							    <h5 class="mb-0">
 							    	<button type="button" class="btn btn-primary">Save</button>
-									<button type="button" class="btn btn-primary">Delete</button>
+									<button type="button" class="btn btn-primary" onclick='confirm_delete("{{venv['name']}}", "{{venv['id']}}")'>Delete</button>
 
 							    	<button class="btn btn-secondary" data-toggle="collapse" data-target="#collapse{{loop.index}}" aria-expanded="true" aria-controls="collapse{{loop.index}}">
 							        	Show Packages
@@ -74,16 +74,17 @@
 				var instances = M.Chips.init(elems, options);
 			});
 
-			  // Or with jQuery
+			function delete_venv(venv_id){
+				fetch(`/apl-wm-crm/api/environment/${venv_id}`, {
+					method: 'DELETE'
+				}).then(response => console.log(response.json()));
+			}
 
-			  //$('.chips').chips();
-
-			  /*
-			  $('.chips-placeholder').chips({
-			    placeholder: 'Enter a tag',
-			    secondaryPlaceholder: '+Tag',
-			  });
-			  */
+			function confirm_delete(venv_name, venv_id){
+				let ans = prompt(`To confirm the deletion of this virtual environment, please enter with it's name: ${venv_name}. Notice this action cannot be undone`)
+				if(venv_name == ans)
+					delete_venv(venv_id);
+			}
 
 		</script>
 	</div>

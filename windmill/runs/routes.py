@@ -21,6 +21,7 @@ from windmill.models import Run, RunDAO
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 runs = Blueprint('runs', __name__)
+context = "apl-wm-crm"
 
 # === WRAPPED FUNCTIONS =======================================================
 def _runs_handler(request):
@@ -37,7 +38,7 @@ def _runs_handler(request):
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === API routes ==============================================================
-@runs.route('/api/runs/', methods=["GET"])
+@runs.route(f'/{context}/api/runs/', methods=["GET"])
 def api_runs():
     ans = _runs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
@@ -49,7 +50,7 @@ def api_runs():
     else:
         return ans
 
-@runs.route('/api/job/<job_id>/runs', methods=["GET"])
+@runs.route(f'/{context}/api/job/<job_id>/runs', methods=["GET"])
 def api_job_runs(job_id):
     try:
         if(request.method == "GET"):
@@ -65,7 +66,7 @@ def api_job_runs(job_id):
         print("_runs_handler", "INTERNAL ERROR", e)
         return abort(500)
 
-@runs.route('/api/run/<run_id>', methods=["GET"])
+@runs.route(f'/{context}/api/run/<run_id>', methods=["GET"])
 def api_run(run_id):
     try:
         print("runs", "RUNS -> ", request.method, " --> ", run_id)
@@ -84,7 +85,7 @@ def api_run(run_id):
         print("api_run", "INTERNAL ERROR", e)
         return abort(500)
 
-@runs.route('/api/task/info/<job_id>')
+@runs.route(f'/{context}/api/task/info/<job_id>')
 def api_info_task(job_id):
     try:
         print("tasks", "INFO invoked")
@@ -103,7 +104,7 @@ def api_info_task(job_id):
 
 
 # === Application routes ======================================================
-@runs.route('/runs', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
+@runs.route(f'/{context}/runs', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
     ans = _runs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
