@@ -24,7 +24,7 @@ tasks = Blueprint('tasks', __name__)
 context = "apl-wm-crm"
 
 # === HELPERS functions =======================================================
-@tasks.route(f'/{context}/apl-wm-crm/test')
+@tasks.route('/'+context+'/apl-wm-crm/test')
 def test():
     sched = app.config['SCHEDULER']
     print("#"*50, "\n\n")
@@ -53,103 +53,73 @@ def _jobs_handler(request):
                 )
             JobDAO.insert(job)
 
-            flash({'title' : "Task", 'msg' : "Task {} created.".format(job.name), 'type' : MsgTypes['SUCCESS']})
             #print("tasks", TASKS)
 
         elif(request.method == "GET"):
             print("jobs", "home-GET")
         
-        try:
-            jobs_to_return = JobDAO.recover()
-        except Exception as e:
-            print(f"Exception throwed: {e}")
-            flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
-            return {'response' : app.config['ERROR'], 'err' : e}
-        
-        print(f"jobs_to_return {len(jobs_to_return)}")
+        jobs = JobDAO.recover()
+        assert jobs != None, "Could not query 'tasks' collection. This happened because either the collection don't exist or the database refused connection"
+        print("jobs", jobs)
 
-        return {'response' : app.config['SUCCESS'], 'data' : jobs_to_return}
+        return {'response' : app.config['SUCCESS'], 'data' : jobs}
     except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("_jobs_handler", "INTERNAL ERROR", e)
-        return abort(500)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 
 def _play_task(job_id):
     try:
-        #print("tasks", divisor)
-        #print("tasks", "PLAY invoked ", job_id)
-        #print("tasks", divisor)
+        print("tasks", "PLAY invoked")
         job = JobDAO.recover_by_id(job_id)
-        print("jobs", "PLAY> ", job)
-
         if(job != None):
-            
             job.play()
-            
-            print("tasks", "EXECUTING .. ", (os.path.join(app.config['UPLOAD_FOLDER'], job.entry_point)))
-            flash({'title' : "", 'msg' : f"Job {job.name} executed successfully", 'type' : MsgTypes['SUCCESS']})
-            return app.config['SUCCESS']
+            return {'response' : app.config['SUCCESS'], 'msg' : "Job "+job.name+" executed successfully"}
         else:
-            flash({'title' : "Task Action", 'msg' : f"Job with id:{job_id} not found", 'type' : MsgTypes['ERROR']})
-            return abort(404)
+            return {'response' : app.config['ERROR'], 'err' : "Job with id: "+job_id+" not found", 'statusCode' : 404}
     except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("tasks", "INTERNAL ERROR", e)
-        return abort(500)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 
 def _stop_task(job_id):
     try:
         print("tasks", "STOP invoked")
         job = JobDAO.recover_by_id(job_id)
-
         if(job != None):
-            
             job.stop()
-
-            print("jobs", "KILLING .. ", job.entry_point)
-            flash({'title' : "Task Action", 'msg' : f"Job {job.name} is now stoped", 'type' : MsgTypes['SUCCESS']})
-            return app.config['SUCCESS']
+            return {'response' : app.config['SUCCESS'], 'msg' : "Job "+job.name+" is now stoped"}
         else:
-            flash({'title' : "Task Action", 'msg' : f"Job with id:{job_id} not found", 'type' : MsgTypes['ERROR']})
-            return abort(404)
+            return {'response' : app.config['ERROR'], 'err' : "Job with id: "+job_id+" not found", 'statusCode' : 404}
     except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("tasks", "INTERNAL ERROR", e)
-        return abort(500)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 
 def _schedule_task(job_id):
     try:
         print("tasks", "SCHEDULE invoked")
         job = JobDAO.recover_by_id(job_id)
-
         if(job != None):
-            print("jobs", "job is not None")
             job.schedule()
-            print("tasks", "SCHEDULED .. ", (os.path.join(app.config['UPLOAD_FOLDER'], job.entry_point)))
-            return app.config['SUCCESS']
+            return {'response' : app.config['SUCCESS'], 'msg' : "Job "+job.name+" is now scheduled"}
         else:
-            flash({'title' : "Task Action", 'msg' : "Task id:{} could not be found".format(str(job._id)), 'type' : MsgTypes['ERROR']})
-            return abort(404)
+            return {'response' : app.config['ERROR'], 'err' : "Job with id: "+job_id+" not found", 'statusCode' : 404}
     except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("tasks", "INTERNAL ERROR", e)
-        return abort(500)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === API routes ==============================================================
-@tasks.route(f'/{context}/api/tasks/', methods=["GET","POST"])
+@tasks.route('/'+context+'/api/tasks/', methods=["GET","POST"])
 def api_tasks():
     ans = _jobs_handler(request)
+    #print("="*100, "\n\n", ans, "\n\n", "="*100)
     if(ans['response'] == app.config['SUCCESS']):
         jobs = ans['data']
-        jobs_json = []
-        for job in jobs:
-            jobs_json.append(job.jsonify())
+        jobs_json = [job.jsonify() for job in jobs]
         return jsonify(jobs_json)
     else:
         return ans
 
-@tasks.route(f'/{context}/api/task/<job_id>', methods=["DELETE", "GET", "PUT"])
+@tasks.route('/'+context+'/api/task/<job_id>', methods=["DELETE", "GET", "PUT"])
 def api_task(job_id):
     try:
         print("tasks", "TASK -> ", request.method, " --> ", job_id)
@@ -161,7 +131,7 @@ def api_task(job_id):
                 return app.config['SUCCESS']
 
             elif(request.method == "PUT"):
-                assert job.no_runs == 0, f"Could not update job '{job.name}' because this job already runned once"
+                assert job.no_runs == 0, "Could not update job '"+job.name+"' because this job already runned once"
 
                 job.name = request.form['taskName'] if(request.form['taskName'].strip() != '') else job.name
                 job.entry_point = request.form['taskEntry'] if(request.form['taskEntry'].strip() != '') else job.entry_point
@@ -173,48 +143,40 @@ def api_task(job_id):
 
                 JobDAO.update(job)
 
-                flash({'title' : "Task Action", 'msg' : f"Job '{job.name}' was updated", 'type' : MsgTypes['SUCCESS']})
-                return app.config['SUCCESS']
-
             if(request.method in ["GET", "PUT"]): # "DELETE"
                 return jsonify(job.jsonify())
 
         else:
-            flash({'title' : "Task Action", 'msg' : f"Job id:{job_id} could not be found", 'type' : MsgTypes['ERROR']})
-            return abort(404)
-        flash({'title' : "Tasks", 'msg' : "/api/task does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
-        return abort(405)
+            return {'response' : app.config['ERROR'], 'err' : "Job id: "+job_id+" could not be found", 'statusCode' : 404}
+        return {'response' : app.config['ERROR'], 'err' : "/api/task does not accept this HTTP verb", 'statusCode' : 403}
     except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("tasks", "INTERNAL ERROR", e)
-        return abort(500)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 
-@tasks.route(f'/{context}/api/task/info/<job_id>')
+@tasks.route('/'+context+'/api/task/info/<job_id>')
 def api_info_task(job_id):
     try:
         print("tasks", "INFO invoked")
         job = JobDAO.recover_by_id(job_id)
         if(job != None):
-            print("Jobs", "job is not None", job)
-            #return jsonify(data)
+            #print("Jobs", "job is not None", job)
+            return jsonify(job.jsonify())
         else:
-            flash({'title' : "Job Action", 'msg' : "Job id:{} could not be found".format(str(job._id)), 'type' : MsgTypes['ERROR']})
-            return abort(404)
+            return {'response' : app.config['ERROR'], 'err' : "The requested job was not found", 'statusCode' : 404}
     except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("tasks", "INTERNAL ERROR", e)
-        return abort(500)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 
-@tasks.route(f'/{context}/api/task/play/<job_id>')
+@tasks.route('/'+context+'/api/task/play/<job_id>')
 def api_play_task(job_id):
     ans = _play_task(job_id)
     print("tasks", "PLAY return", ans, app.config['SUCCESS'], ans == app.config['SUCCESS'])
-    if(ans == app.config['SUCCESS']):
+    if(ans['response'] == app.config['SUCCESS']):
         return jsonify(success=True)
     else:
         return ans
 
-@tasks.route(f'/{context}/api/task/stop/<job_id>')
+@tasks.route('/'+context+'/api/task/stop/<job_id>')
 def api_stop_task(job_id):
     ans = _stop_task(job_id)
     if(ans == app.config['SUCCESS']):
@@ -222,7 +184,7 @@ def api_stop_task(job_id):
     else:
         return ans
 
-@tasks.route(f'/{context}/api/task/schedule/<task_id>')
+@tasks.route('/'+context+'/api/task/schedule/<task_id>')
 def api_schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):
@@ -233,35 +195,43 @@ def api_schedule_task(task_id):
 
 
 # === Application routes ======================================================
-@tasks.route(f'/{context}/', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
+@tasks.route('/'+context+'/', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
     ans = _jobs_handler(request)
+    print("ANS ", ans)
     if(ans['response'] == app.config['SUCCESS']):
+        # flash({'title' : "TASKS", 'msg' : ans['msg'], 'type' : MsgTypes['SUCCESS']})
         return render_template('tasks_view.html', jobs=ans['data'])
     else:
-        return render_template('tasks_view.html', err=ans['err'])
+        flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
+        #return abort(ans['statusCode'])
+        return render_template('tasks_view.html', jobs=[])
 
-@tasks.route(f'/{context}/task/play/<int:task_id>')
+@tasks.route('/'+context+'/task/play/<int:task_id>')
 def play_task(task_id):
     ans = _play_task(task_id)
     if(ans == app.config['SUCCESS']):
+        # flash({'title' : "TASKS", 'msg' : ans['msg'], 'type' : MsgTypes['SUCCESS']})
         return redirect(url_for('tasks.home'))
     else:
-        return ans
+        flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
+        return abort(ans['statusCode'])
 
-@tasks.route(f'/{context}/task/stop/<int:task_id>')
+@tasks.route('/'+context+'/task/stop/<int:task_id>')
 def stop_task(task_id):
     ans = _stop_task(task_id)
     if(ans == app.config['SUCCESS']):
         return redirect(url_for('tasks.home'))
     else:
-        return ans
+        flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
+        return abort(ans['statusCode'])
 
-@tasks.route(f'/{context}/task/schedule/<int:task_id>')
+@tasks.route('/'+context+'/task/schedule/<int:task_id>')
 def schedule_task(task_id):
     ans = _schedule_task(task_id)
     if(ans == app.config['SUCCESS']):
         return redirect(url_for('tasks.home'))
     else:
-        return ans
+        flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
+        return abort(ans['statusCode'])
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

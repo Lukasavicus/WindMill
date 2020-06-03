@@ -42,6 +42,11 @@
 	            {% endfor %}
 			</tbody>
 		</table>
+			{% if files_info|length == 0 %}
+				<div class="alert alert-dark" role="alert">
+					No Files were created !
+				</div>
+			{% endif %}
 		</section>
 	</div>
 	<script type="text/javascript">

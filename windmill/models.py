@@ -4,6 +4,7 @@
 import sys, os, platform, psutil
 import subprocess as sub
 from datetime import datetime
+import json
 
 from bson.objectid import ObjectId
 from pymongo import MongoClient
@@ -34,7 +35,7 @@ class User(db.Model, UserMixin):
 
     # double-underscored methods -> dunder methods -> magic methods
     def __repr__(self):
-        return f"User('{self.id}', '{self.username}', '{self.email}')"
+        return "User('"+self.id+"', '"+self.username+"', '"+self.email+"')"
 
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -100,7 +101,7 @@ class Job():
         h = str(self.schd_hours) if(self.schd_hours != 0) else '*'
         m = str(self.schd_minutes) if(self.schd_minutes != 0) else '*'
         s = str(self.schd_seconds) if(self.schd_seconds != 0) else '*'
-        return f"/{st} /{h} /{m} /{s} /{e}"
+        return "/"+st+" /"+h+" /"+m+" /"+s+" /"+e+""
 
 
     def isAlive(self):
@@ -119,7 +120,7 @@ class Job():
 
     def jsonify(self):
         return {
-                    '_id': self._id, 'end_at' : self.end_at, 'entry_point': self.entry_point,
+                    '_id': str(self._id), 'end_at' : self.end_at, 'entry_point': self.entry_point,
                     'last_exec_status': self.last_exec_status, 'name': self.name, 'no_runs' : self.no_runs,
                     'pid': self.pid, 'schd_hours' : self.schd_hours, 'schd_minutes' : self.schd_minutes,
                     'schd_seconds' : self.schd_seconds, 'start_at': self.start_at,
@@ -128,7 +129,7 @@ class Job():
                 }
 
     def __repr__(self):
-        return f"JOB: id[{self._id}] name[{self.name}]"
+        return "JOB: id["+str(self._id)+"] name["+self.name+"]"
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === Job - Data Access Object ================================================
@@ -234,9 +235,7 @@ class Run():
     out = []
     err = []
 
-    def __init__(self,
-            job_id, job_name, job_entry_point, _id=None, started_at=None, ended_at=None, status=None, out=[], err=[]
-        ):
+    def __init__(self, job_id, job_name, job_entry_point, _id=None, started_at=None, ended_at=None, status=None, out=[], err=[]):
         self.job_id = job_id
         self.job_name = job_name
         self.job_entry_point = job_entry_point
@@ -249,13 +248,13 @@ class Run():
 
     def jsonify(self):
         return {
-                    '_id': self._id, 'ended_at' : self.ended_at, 'err' : self.err, 
+                    '_id': str(self._id), 'ended_at' : self.ended_at, 'err' : self.err, 
                     'job_entry_point': self.job_entry_point, 'job_id': self.job_id, 'job_name': self.job_name,
                     'out': self.out, 'started_at' : self.started_at, 'status' : self.status
                 }
 
     def __repr__(self):
-        return f"RUN: id[{self._id}] name[{self.job_name}]"
+        return "RUN: id["+str(self._id)+"] name["+self.job_name+"]"
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === Run - Data Access Object ================================================
@@ -353,8 +352,8 @@ class Agent:
     PYTHON_CMD = "python" if platform.system() == "Windows" else "python3" # define the string that represents the python command
 
     def __init__(self, connection, job):
-        self.connection:MongoClient = connection
-        self.job:Job = job
+        self.connection = connection
+        self.job = job
 
         self.base_path = app.config['UPLOAD_FOLDER']
 
@@ -378,7 +377,7 @@ class Agent:
         #print("EXEC:", f"{Agent.PIPENV_CMD} run {Agent.PYTHON_CMD} -u {script_file}", " ON: ", script_folder)
         
         # Trigger the run of a job in a form of a new subprocess (executing with pipenv to isolate the virtual enviroments)
-        process = sub.Popen(f"{Agent.PIPENV_CMD} run {Agent.PYTHON_CMD} -u {script_file}", stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True, cwd=script_folder)
+        process = sub.Popen(Agent.PIPENV_CMD+" run "+Agent.PYTHON_CMD+" -u "+script_file, stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True, cwd=script_folder)
         
         #print("process:", process)
 
@@ -393,7 +392,7 @@ class Agent:
                 print("\n\nExiting because the process is no longer alive\n\n")
                 break
             if(output):
-                print(f"\n\nOUTPUT: >{output}<\n\n")
+                print("\n\nOUTPUT: >"+output+"<\n\n")
                 RunDAO.update_add_output(self.run ,output.strip())
 
         return_process_code = process.returncode
@@ -402,15 +401,15 @@ class Agent:
         if('status' in run_register):
             actual_status = run_register['status']
 
-        print(f"\n\nActual Status: {actual_status}\n\n")
+        print("\n\nActual Status: "+actual_status+"\n\n")
 
         if(return_process_code == 1):
             print("\n\n Something goes wrong \n\n")
             error = process.stderr.readlines()
-            print(f"\n\n The error {error} will be logged\n\n")
+            print("\n\n The error "+error+" will be logged\n\n")
             if(error and len(error) != 0):
                 RunDAO.update_add_error(self.run, error)
-                print(f"\n\n The error {error} was logged\n\n")
+                print("\n\n The error "+error+" was logged\n\n")
         
         self.job.end_at = datetime.now()
         self.run.ended_at = self.job.end_at
@@ -429,11 +428,11 @@ class Agent:
         scheduler = app.config['SCHEDULER']
         try:
             scheduler.remove_job(str(self.job._id))
-            print(f"Job with id {str(self.job._id)} was Scheduled! but now we are removing it")
+            print("Job with id "+str(self.job._id)+" was Scheduled! but now we are removing it")
             #job.last_exec_status = 15
             #JobDAO.update_when_finish_run(job)
         except:
-            print(f"Job with id {str(self.job._id)} was not scheduled")
+            print("Job with id "+str(self.job._id)+" was not scheduled")
             print("THIS AGENT:", self)
             process = self._get_process()
             if(process):
@@ -480,14 +479,14 @@ class Package:
         self.version = version
     
     def __repr__(self):
-        return f"{{'name' : '{self.name}', 'version_specifier' : '{self.version_specifier}', 'version' : '{self.version}' }}"
+        return dict("{'name' : '"+self.name+"', 'version_specifier' : '"+self.version_specifier+"', 'version' : '"+self.version+"'}")
 
 class VEnvironment:
     _id = None
 
-    def __init__(self, _id, name, packages = []):
-        self._id = _id
+    def __init__(self, name, _id=None, packages=[]):
         self.name = name
+        self._id = _id
         self.packages = packages
     
     def add_package(self, package):
@@ -508,10 +507,10 @@ class VEnvironment:
         self.packages.append(package)
 
     def jsonify(self):
-        return { '_id': self._id, 'name' : self.name, 'packages' : self.packages }
+        return { '_id': str(self._id), 'name' : self.name, 'packages' : self.packages }
 
     def __repr__(self):
-        return f"VENV: id[{self._id}] name[{self.name}]"
+        return "VENV: id["+str(self._id)+"] name["+self.name+"] pakgs[" + ''.join([str(pkg) for pkg in self.packages]) + "]"
 
 
 # === VEnvironment - Data Access Object =======================================
@@ -521,7 +520,10 @@ class VEnvironmentDAO():
 
     @staticmethod
     def _new_venv(venv_item):
-        return VEnvironment(venv_item["_id"], venv_item["name"])#, venv_item["packages"])
+        # TODO: Investigate why I can't print the packages
+        packages = [Package(pkg_dict['name'], pkg_dict['version_specifier'], pkg_dict['version']) for pkg_dict in venv_item["packages"]]
+        venv = VEnvironment(venv_item["name"], venv_item["_id"], packages)
+        return venv
     
     @staticmethod
     def _new_venv_list(venv_list):
@@ -535,8 +537,7 @@ class VEnvironmentDAO():
     
     @staticmethod
     def insert(venv):
-        print(venv.packages, type(venv.packages))
-        pkgs = [f"{pkg}" for pkg in venv.packages]
+        pkgs = [dict(pkg) for pkg in venv.packages]
         mongo.db.venvs.insert({
             'name' : venv.name,
             'packages' : pkgs

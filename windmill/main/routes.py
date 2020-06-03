@@ -33,7 +33,7 @@ def register():
 		db.session.commit()
 
 		print('Validation on register success')
-		flash({'title' : 'Register Success', 'msg' : f'Account created {form.username.data}!', 'type' : MsgTypes['SUCCESS']})
+		flash({'title' : 'Register Success', 'msg' : 'Account created '+form.username.data+'!', 'type' : MsgTypes['SUCCESS']})
 		return redirect(url_for('tasks.home'))
 	else:
 		print('Validation on register failed')
@@ -52,13 +52,13 @@ def login():
 		
 		if(user and bcrypt.check_password_hash(user.password, form.password.data)):
 			login_user(user, remember=form.remember.data)
-			flash({'title' : 'Logged In Success', 'msg' : f'Account logged: {form.email.data}!', 'type' : MsgTypes['SUCCESS']})
+			flash({'title' : 'Logged In Success', 'msg' : 'Account logged: '+form.email.data+'!', 'type' : MsgTypes['SUCCESS']})
 
 			next_page = request.args.get('next') or url_for('tasks.home')
 
 			return redirect(next_page)
 		else:
-			flash({'title' : 'Logged In Error', 'msg' : f'Account or Password doesn\'t match' , 'type' : MsgTypes['ERROR']})
+			flash({'title' : 'Logged In Error', 'msg' : 'Account or Password doesn\'t match' , 'type' : MsgTypes['ERROR']})
 	else:
 		print('Validation on login failed')
 	return render_template('login.html', title='Register', form=form)

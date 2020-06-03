@@ -28,13 +28,13 @@ import subprocess
 
 def popen_and_call(on_exit, cmd, cwd): #, venv_name
     """
-    Runs the given args in a subprocess.Popen, and then calls the function
-    on_exit when the subprocess completes.
-    on_exit is a callable object, and popen_args is a list/tuple of args that 
-    would give to subprocess.Popen.
+        Runs the given args in a subprocess.Popen, and then calls the function
+        on_exit when the subprocess completes.
+        on_exit is a callable object, and popen_args is a list/tuple of args that 
+        would give to subprocess.Popen.
     """
     def run_in_thread(on_exit, cmd, cwd): #, venv_name
-        print(f"I WILL WAIT - {cmd} - {cwd}")
+        print("I WILL WAIT - cmd - "+cwd+"")
         proc = sub.Popen(cmd, cwd=cwd)
         proc.wait()
         print("WAIT IS OVER")
@@ -45,10 +45,12 @@ def popen_and_call(on_exit, cmd, cwd): #, venv_name
     return thread
 
 def _add_packages_installed(folder):
+    print("_add_packages_installed")
     print("="*100, "\n\natualizando...\n\n", "="*100)
     pkgs = _get_packages(folder)
     venv_name = "env"
-    venv = VEnvironment(venv_name, pkgs)
+    venv = VEnvironment(venv_name, packages=pkgs)
+    print("VEnv is now with all packages", venv)
     return VEnvironmentDAO.insert(venv)
 
 def _get_packages(foldername):
@@ -57,6 +59,7 @@ def _get_packages(foldername):
         all packages installed (by getting access to the Pipfile.lock file that
         contains this information organized in json)
     """
+    print("_get_packages")
     pkgs = []
     try:
         #print("venvs", "TRYING ACCESS", foldername)
@@ -72,7 +75,10 @@ def _get_packages(foldername):
         #print("venvs", divisor)
 
         if(len(pkg_list) > 0):
-            pkgs = [{'name' : pkg, 'version' : pkgs_data['default'][pkg]['version']} for pkg in pkg_list]
+            pkgs = [{
+                    'name' : pkg,
+                    'version_specifier' : pkgs_data['default'][pkg]['version'][:2],
+                    'version' : pkgs_data['default'][pkg]['version'][2:] } for pkg in pkg_list]
     except Exception as e:
         #flash({'title' : "Virtual Env", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("venvs", "INTERNAL ERROR", e)
@@ -84,23 +90,28 @@ def _get_venvs():
         Function that based on a directory :BASE_DIR: recover all virtual
         environments
     """
+    print("_get_venvs()")
     BASE_DIR = app.config['UPLOAD_FOLDER']
     folders = os.listdir(BASE_DIR)
-
     venvs = VEnvironmentDAO.recover()
-    print(venvs)
 
-    venvs = [{
-        'id' : venvs[0]._id,
-        'name' : folder,
-        'pkgs' : _get_packages(os.path.join(BASE_DIR, folder)),
-        'associated_archives' : list(
+    # venvs = [{
+    #     'id' : venvs[0]._id,
+    #     'name' : folder,
+    #     'pkgs' : _get_packages(os.path.join(BASE_DIR, folder)),
+    #     'associated_archives' : list(
+    #         filter(
+    #             lambda resource : os.path.isdir(os.path.join(BASE_DIR, folder, resource)),
+    #             os.listdir(os.path.join(BASE_DIR, folder))
+    #         ))
+    #     } for folder in folders]
+
+    associated = list(map(lambda venv: {'associated_archives' : list(
             filter(
-                lambda resource : os.path.isdir(os.path.join(BASE_DIR, folder, resource)),
-                os.listdir(os.path.join(BASE_DIR, folder))
-            ))
-        } for folder in folders]
-    
+                lambda resource : os.path.isdir(os.path.join(BASE_DIR, venv.name, resource)),
+                os.listdir(os.path.join(BASE_DIR, venv.name))
+            ))}, venvs))
+    print(associated)
     return venvs
 
 def _new_virtual_environment(req_form):
@@ -143,7 +154,7 @@ def _make_requirements(foldername, virtual_env_obj):
     
 
 # === Application routes ======================================================
-@venvironments.route(f'/{context}/environments/add')
+@venvironments.route('/'+context+'/environments/add')
 def environments_add():
     """
         Route to the view that renders the page to input a new virtual
@@ -151,7 +162,7 @@ def environments_add():
     """
     return render_template('venv_mng.html')
 
-@venvironments.route(f'/{context}/environments', methods=["GET","POST"])
+@venvironments.route('/'+context+'/environments', methods=["GET","POST"])
 def environments():
     """
         Route to handles with:
@@ -163,28 +174,28 @@ def environments():
     try:
         if(request.method == "POST"):
             print("venvs", "POST")
-            #print("venvs", request.form)
             venvName = request.form['venvName']
             foldername = secure_filename(venvName)
             full_foldername = os.path.join(app.config['UPLOAD_FOLDER'], foldername)
             os.mkdir(full_foldername)
-
+            print("So far so good - 1")
             venv = _new_virtual_environment(request.form)
-            print("So far so good")
+            print("So far so good - 2")
             requirements_filename = _make_requirements(full_foldername, venv)
-            
+            print("So far so good - 3")
             #p = sub.Popen(["pipenv", "install", "-r", requirements_filename], cwd=full_foldername)
 
             #val = popen_and_call(_add_packages_installed, ["pipenv", "install", "-r", requirements_filename], full_foldername, venv.name)
             popen_and_call(_add_packages_installed, ["pipenv", "install", "-r", requirements_filename], full_foldername)
 
-            flash({'title' : "Virtual Env", 'msg' : "Virtual Env {} created successfully".format(full_foldername), 'type' : MsgTypes['SUCCESS']})
+            flash({'title' : "Virtual Env", 'msg' : "Virtual Env {} will be created asynchronously successfully".format(full_foldername), 'type' : MsgTypes['SUCCESS']})
             
             return redirect(url_for('tasks.home')) #redirect('/') #render_template('running.html', tasks=tasks)
 
         elif(request.method == "GET"):
             print("venvs", "GET")
             venvs = _get_venvs()
+            assert venvs != None, "Could not query 'venvs' collection. This happened because either the collection don't exist or the database refused connection"
             return render_template('venvs.html', venvs=venvs)
 
         flash({'title' : "Virtual Env", 'msg' : "/packages  does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
@@ -198,7 +209,7 @@ def environments():
 
 
 # === Application routes ======================================================
-@venvironments.route(f'/{context}/api/environment/<venv_id>', methods=["DELETE", "GET", "PUT"])
+@venvironments.route('/'+context+'/api/environment/<venv_id>', methods=["DELETE", "GET", "PUT"])
 def api_venv(venv_id):
     try:
         print("venvs", "VENV -> ", request.method, " --> ", venv_id)
@@ -206,20 +217,20 @@ def api_venv(venv_id):
         print("\n\n", venv, "\n\n")
         if(venv != None):
             if(request.method == "DELETE"):
-                print(f"VENV DELETE: {venv_id}")
+                print("VENV DELETE: "+venv_id+"")
                 #VenvDAO.delete(venv)
                 return app.config['SUCCESS']
 
             elif(request.method == "PUT"):
                 # _new_virtual_environment()
-                flash({'title' : "Venv Action", 'msg' : f"Venv '{venv.name}' was updated", 'type' : MsgTypes['SUCCESS']})
+                flash({'title' : "Venv Action", 'msg' : "Venv '"+venv.name+"' was updated", 'type' : MsgTypes['SUCCESS']})
                 return app.config['SUCCESS']
 
             if(request.method in ["GET", "PUT"]): # "DELETE"
                 return jsonify(venv.jsonify())
 
         else:
-            flash({'title' : "Venv Action", 'msg' : f"Venv id:{venv_id} could not be found", 'type' : MsgTypes['ERROR']})
+            flash({'title' : "Venv Action", 'msg' : "Venv id:"+venv_id+" could not be found", 'type' : MsgTypes['ERROR']})
             return abort(404)
         flash({'title' : "Venvs", 'msg' : "/api/venv does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
         return abort(405)

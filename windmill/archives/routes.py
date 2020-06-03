@@ -99,7 +99,7 @@ def _dir_listing(req_path=''):
 
 
 # === Application routes ======================================================
-@archives.route("/apl-wm-crm/upload", methods=['GET', 'POST'])
+@archives.route("/"+context+"/upload", methods=['GET', 'POST'])
 def upload_file():
     """
         Route to handles with:
@@ -140,7 +140,7 @@ def upload_file():
             #print("archives", 'Finished')
             os.remove(full_filename)
 
-            flash({'title' : "Archive", 'msg' : f"Archive {full_filename} created successfully.", 'type' : MsgTypes['SUCCESS']})
+            flash({'title' : "Archive", 'msg' : "Archive "+full_filename+" created successfully.", 'type' : MsgTypes['SUCCESS']})
             (files_info, locations, isRoot, folderEnv) = _dir_listing('')
             return render_template('archives_view.html', files_info=files_info, locations=locations, isRoot=isRoot, folderEnv=folderEnv)
     elif(request.method == 'GET'):
@@ -149,8 +149,8 @@ def upload_file():
     flash({'title' : "Tasks", 'msg' : "/upload does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
     return abort(405)
 # -----------------------------------------------------------------------------
-@archives.route(f"/{context}/fs", defaults={'req_path': ''})
-@archives.route(f"/{context}/fs/<path:req_path>")
+@archives.route("/"+context+"/fs", defaults={'req_path': ''})
+@archives.route("/"+context+"/fs/<path:req_path>")
 def dir_listing(req_path):
     req_path = __resolve_path(req_path)
     #print("archives", divisor)
@@ -166,25 +166,23 @@ def dir_listing(req_path):
 
 
 # === API routes ==============================================================
-@archives.route(f"/{context}/api/fs", defaults={'req_path': ''})
-@archives.route(f"/{context}/api/fs/<path:req_path>", methods=['GET', 'DELETE'])
+@archives.route("/"+context+"/api/fs", defaults={'req_path': ''})
+@archives.route("/"+context+"/api/fs/<path:req_path>", methods=['GET', 'DELETE'])
 def dir_listing_api(req_path):
     req_path = __resolve_path(req_path)
     #trace('dir_listing_api')
     try:
         abs_path = _get_req_absolute_path(req_path)
-        (files_info, locations, isRoot, folderEnv) = _dir_listing(req_path)
+        (files_info, locations, _, _) = _dir_listing(req_path)
         if(request.method == "DELETE"):
             # PATH SEP SYSTEM DEPENDANCY
             #req_path.count('/')
             assert req_path.count(os.path.sep) == 0, "Selected path '{}' is not a root directory. Delete are allowed only in roots directories".format(req_path)
             shutil.rmtree(abs_path)
             abs_path = app.config['UPLOAD_FOLDER']
-            flash({'title' : "Archive", 'msg' : "Archive {} deleted.".format(req_path), 'type' : MsgTypes['SUCCESS']})
         # elif(request.method == "DELETE"):
         return jsonify ({'files_info' : files_info, 'locations' : locations})
     except Exception as e:
-        flash({'title' : "ERROR", 'msg' : e, 'type' : MsgTypes['ERROR']})
         print("archives", "INTERNAL ERROR", e)
-        return abort(500)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

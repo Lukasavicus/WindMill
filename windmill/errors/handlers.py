@@ -21,7 +21,7 @@ errors = Blueprint('errors', __name__)
 context = "apl-wm-crm"
 
 # === HELPERS functions =======================================================
-@errors.route(f'/{context}/apl-wm-crm/test_err')
+@errors.route('/'+context+'/apl-wm-crm/test_err')
 def test():
     sched = app.config['SCHEDULER']
     print("#"*50, "\n\n")

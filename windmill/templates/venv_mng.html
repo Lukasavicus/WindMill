@@ -134,15 +134,16 @@
 
 			function add(row_idx){
 				let tbody = document.getElementById('req-table-body');
+				let no_rows = tbody.children.length;
 				// Create an empty <tr> element and add it to the 1st position of the table:
 				var row = tbody.insertRow(tbody.childElementCount);
 				row.innerHTML = `
 				<tr>
 						<td>
-							<input type="text" class="form-control" id="pkgName" name="pkgName0" aria-describedby="pkgName" placeholder="Package name">
+							<input type="text" class="form-control" id="pkgName" name="pkgName${no_rows}" aria-describedby="pkgName" placeholder="Package name">
 						</td>
 						<td>
-							<select class="form-control" name="pkgSpecifier0">
+							<select class="form-control" name="pkgSpecifier${no_rows}">
 								<option value="">  </option>
 								<option value="==">==</option>
 								<option value=">=">>=</option>
@@ -152,7 +153,7 @@
 							</select>
 						</td>
 						<td>
-							<input type="text" class="form-control" id="pkgVersion" name="pkgVersion0" aria-describedby="pkgVersion" placeholder="Package version">
+							<input type="text" class="form-control" id="pkgVersion" name="pkgVersion${no_rows}" aria-describedby="pkgVersion" placeholder="Package version">
 						</td>
 						<td><i class="far fa-plus-square" onclick="add(${tbody.childElementCount})"></i></td>
 						<td><i class="far fa-minus-square" onclick="remove(${tbody.childElementCount})"></i></td>

@@ -67,6 +67,12 @@
 				</div>
 				{% endfor %}
 			</div>
+			{% if venvs|length == 0 %}
+				<div class="alert alert-dark" role="alert">
+					No Virtual Environments were created !
+				</div>
+				<p>Click <a href="{{ url_for('venvironments.environments_add') }}">here</a> to create a Virtual Environment</p>
+			{% endif %}
 		</section>
 		<script type="text/javascript">
 			document.addEventListener('DOMContentLoaded', function() {
