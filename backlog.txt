@@ -49,18 +49,18 @@ BACKLOG:
             all routes that change the database need to return an operation confirmation
     
     Rules:
-        Do not allow Job edit after Job run (at least one time)
-        Do not allow play or schedule while job still running
-        Do not delete jobs. Jobs deleted will be marked as deleted, but still be available to Audit
-        Do not allow delete files on root folder for each virtual environment
-        On load for the very first time, garantee that all jobs are marked as 'Not Running'
+        [  ] Do not allow Job edit after Job run (at least one time)
+        [  ] Do not allow play or schedule while job still running
+        [OK] Do not delete jobs. Jobs deleted will be marked as deleted, but still be available to Audit
+        [OK] Do not allow delete files on root folder for each virtual environment
+        [  ] On load for the very first time, garantee that all jobs are marked as 'Not Running'
 
     [OK] Arrumar mensagens de retorno das ações;
     [Doing] Separar a configuração num arquivo a parte -> está separado, mas falta saber qual é a melhor opção: .env x config
     [Doing] Introduzir a ideia de "contexto" -> está feito, mas tenho um context para cada Blueprint, será que dá pra fazer num único?
     Melhorar o código (separar funções e documentar melhor)
 
-    páginas de erro
+    [OK] páginas de erro
 
     Introduzir a ideia correta de cron: https://crontab.guru/#5/5_*_*_8_*
         -> minute(0-59), hour(0-23), day(1-31), month(1-12), day-week(0-6)

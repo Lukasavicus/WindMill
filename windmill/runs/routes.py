@@ -38,16 +38,20 @@ def _runs_handler(request):
     try:
         if(request.method == "GET"):
             print("runs", "home-GET")
-        runs_to_return = RunDAO.recover()
-        assert runs_to_return != None, "Could not query 'runs' collection. This happened because either the collection don't exist or the database refused connection"
-        return {'response' : app.config['SUCCESS'], 'data' : runs_to_return}
+        _runs = RunDAO.recover()
+        print("runs", _runs)
+        if(_runs != None):
+            return {'response' : app.config['SUCCESS'], 'data' : _runs}
+        else:
+            #raise Exception("Could not query 'runs' collection. This happened because either the collection don't exist or the database refused connection")
+            return {'response' : app.config['SUCCESS'], 'data' : []}
     except Exception as e:
         print("_runs_handler", "INTERNAL ERROR", e)
         return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === API routes ==============================================================
-@runs.route('/'+context+'/api/runs/', methods=["GET"])
+@runs.route('/api/runs/', methods=["GET"])
 def api_runs():
     ans = _runs_handler(request)
     print("api_runs", ans, jsonify(ans))
@@ -58,7 +62,7 @@ def api_runs():
     else:
         return ans
 
-@runs.route('/'+context+'/api/job/<job_id>/runs', methods=["GET"])
+@runs.route('/api/job/<job_id>/runs', methods=["GET"])
 def api_job_runs(job_id):
     try:
         if(request.method == "GET"):
@@ -69,10 +73,10 @@ def api_job_runs(job_id):
         print("runs_json", runs_json)
         return jsonify(runs_json)
     except Exception as e:
-        print("_runs_handler", "INTERNAL ERROR", e)
+        print("runs", "INTERNAL ERROR", e)
         return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 
-@runs.route('/'+context+'/api/run/<run_id>', methods=["GET"])
+@runs.route('/api/run/<run_id>', methods=["GET"])
 def api_run(run_id):
     try:
         print("runs", "RUNS -> ", request.method, " --> ", run_id)
@@ -90,11 +94,11 @@ def api_run(run_id):
 
 
 # === Application routes ======================================================
-@runs.route('/'+context+'/runs', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
+@runs.route('/runs', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
     ans = _runs_handler(request)
     if(ans['response'] == app.config['SUCCESS']):
-        return render_template('runs_view.html', runs=runs)
+        return render_template('runs_view.html', runs=ans['data'])
     else:
         flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
         return render_template('runs_view.html', runs=[])

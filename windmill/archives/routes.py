@@ -21,7 +21,6 @@ from windmill.main.utils import trace, divisor, __resolve_path, uri_sep, MsgType
 
 
 archives = Blueprint('archives', __name__)
-context = "apl-wm-crm"
 
 # -----------------------------------------------------------------------------
 #def allowed_file(filename):
@@ -99,7 +98,7 @@ def _dir_listing(req_path=''):
 
 
 # === Application routes ======================================================
-@archives.route("/"+context+"/upload", methods=['GET', 'POST'])
+@archives.route("/upload", methods=['GET', 'POST'])
 def upload_file():
     """
         Route to handles with:
@@ -149,8 +148,8 @@ def upload_file():
     flash({'title' : "Tasks", 'msg' : "/upload does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
     return abort(405)
 # -----------------------------------------------------------------------------
-@archives.route("/"+context+"/fs", defaults={'req_path': ''})
-@archives.route("/"+context+"/fs/<path:req_path>")
+@archives.route("/fs", defaults={'req_path': ''})
+@archives.route("/fs/<path:req_path>")
 def dir_listing(req_path):
     req_path = __resolve_path(req_path)
     #print("archives", divisor)
@@ -166,8 +165,8 @@ def dir_listing(req_path):
 
 
 # === API routes ==============================================================
-@archives.route("/"+context+"/api/fs", defaults={'req_path': ''})
-@archives.route("/"+context+"/api/fs/<path:req_path>", methods=['GET', 'DELETE'])
+@archives.route("/api/fs", defaults={'req_path': ''})
+@archives.route("/api/fs/<path:req_path>", methods=['GET', 'DELETE'])
 def dir_listing_api(req_path):
     req_path = __resolve_path(req_path)
     #trace('dir_listing_api')

@@ -108,14 +108,15 @@ class Job():
         return self.agent.isAlive()
 
     def play(self):
-        print("play Agent:", self.agent)
+        print("Job - play:", self.agent)
         self.agent.execute_job()
 
     def stop(self):
-        print("stop Agent:", self.agent)
+        print("Job - stop:", self.agent)
         self.agent.kill_job()
 
     def schedule(self):
+        print("Job - schedule:", self.agent)
         self.agent.schedule_job()
 
     def jsonify(self):
@@ -154,10 +155,28 @@ class JobDAO():
         })
 
     @staticmethod
+    def _mark_job_to_delete(job):
+        return mongo.db.jobs.find_one_and_update(
+            {'_id': job._id },
+            { '$set' : {'deleted_flag' : True } },
+            upsert = True
+        )
+    
+    @staticmethod
+    def _mark_job_to_delete(job):
+        return mongo.db.jobs.find_one_and_update(
+            {'_id': job._id },
+            { '$set' : {'deleted_flag' : True } },
+            upsert = True
+        ) and RunDAO._mark_associated_runs_of_a_job_to_delete(job)
+
+    @staticmethod
     def delete(job):
         if(job.isAlive()):
             job.process.kill_job()
-        mongo.db.jobs.delete_one( {"_id": ObjectId(job._id)})
+        print("Delete by id:", job)
+        return JobDAO._mark_job_to_delete(job)
+        #mongo.db.jobs.delete_one( {"_id": ObjectId(job._id)})
 
     @staticmethod
     def _new_job(job_item):
@@ -166,13 +185,12 @@ class JobDAO():
 
     @staticmethod
     def recover():
-        job_list = list(mongo.db.jobs.find({}))
+        #job_list = list(mongo.db.jobs.find({}))
+        job_list = list(mongo.db.jobs.find({"deleted_flag" : {"$ne" : True}}))
         if(len(job_list) == 0):
             return None
         else:
-            jobs = []
-            for job_item in job_list:
-                jobs.append(JobDAO._new_job(job_item))
+            jobs = [JobDAO._new_job(job_item) for job_item in job_list]
             return jobs
 
     @staticmethod
@@ -212,15 +230,16 @@ class JobDAO():
 
     @staticmethod
     def recover_by_id(id):
-        job_item = mongo.db.jobs.find_one({'_id' : ObjectId(id)})
+        job_item = mongo.db.jobs.find_one({"$and" : [ {'_id' : ObjectId(id)}, { "deleted_flag" : {"$ne" : True} } ] })
         if(job_item == None):
             return None
         else:
             return JobDAO._new_job(job_item)
 
     @staticmethod
-    def delete_by_id(id):
-        return mongo.db.jobs.delete_one( {"_id": ObjectId(id)})
+    def delete_by_id(job):
+        return JobDAO._mark_job_to_delete(job)
+        #return mongo.db.jobs.delete_one( {"_id": ObjectId(id)})
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === Run - Model =============================================================
@@ -269,13 +288,19 @@ class RunDAO():
     
     @staticmethod
     def _new_run_list(run_list):
-        if(len(run_list) == 0):
+        if(run_list == None or len(run_list) == 0):
             return None
         else:
-            runs = []
-            for run_item in run_list:
-                runs.append(RunDAO._new_run(run_item))
+            runs = [RunDAO._new_run(run_item) for run_item in run_list]
             return runs
+
+    @staticmethod
+    def _mark_associated_runs_of_a_job_to_delete(job):
+        return mongo.db.runs.update(
+            {"job_id": ObjectId(job._id)},
+            { '$set' : {'deleted_flag' : True } },
+            upsert = True
+        )
 
     @staticmethod
     def insert(run):
@@ -320,17 +345,23 @@ class RunDAO():
 
     @staticmethod
     def recover():
-        run_list = list(mongo.db.runs.find({}))
+        #run_list = list(mongo.db.runs.find({}))
+        run_list = list(mongo.db.runs.find({"deleted_flag" : {"$ne" : True}}))
         return RunDAO._new_run_list(run_list)
 
     @staticmethod
     def recover_by_job_id(id):
-        run_list = list(mongo.db.runs.find({'job_id' : ObjectId(id)}))
+        #run_list = list(mongo.db.runs.find({'job_id' : ObjectId(id)}))
+        print('db.runs.find( { "$and" : [ { "job_id" : ObjectId("' + id + '") }, { "deleted_flag" : { "$ne" : true } } ] } ).pretty()')
+        #run_list = mongo.db.jobs.find_one({"$and" : [ {"job_id" : ObjectId(id)}, { "deleted_flag" : {"$ne" : True} } ] })
+        run_list = mongo.db.jobs.find({"$and" : [ {"job_id" : ObjectId(id)}, { "deleted_flag" : {"$ne" : True} } ] })
+        print("RUN_LIST", run_list)
         return RunDAO._new_run_list(run_list)
 
     @staticmethod
     def recover_by_run_id(id):
-        run_item = mongo.db.runs.find_one({'_id' : ObjectId(id)})
+        #run_item = mongo.db.runs.find_one({'_id' : ObjectId(id)})
+        run_item = mongo.db.jobs.find_one({"$and" : [ {'_id' : ObjectId(id)}, { "deleted_flag" : {"$ne" : True} } ] })
         if(run_item == None):
             return None
         else:
@@ -363,7 +394,7 @@ class Agent:
         self.no_interval = 30 #no_interval
 
     def execute_job(self):
-        print("executing job")
+        print("Agent - execute_job")
         # TODO: database name and collection name should be parameters
         runs_collection = self.connection.db.runs
 
@@ -374,12 +405,12 @@ class Agent:
         script_folder = os.path.join(self.base_path, folder_path)
         script_file = os.path.split(self.job.entry_point)[-1]
 
-        #print("EXEC:", f"{Agent.PIPENV_CMD} run {Agent.PYTHON_CMD} -u {script_file}", " ON: ", script_folder)
+        print("EXEC:", f"{Agent.PIPENV_CMD} run {Agent.PYTHON_CMD} -u {script_file}", " ON: ", script_folder)
         
         # Trigger the run of a job in a form of a new subprocess (executing with pipenv to isolate the virtual enviroments)
         process = sub.Popen(Agent.PIPENV_CMD+" run "+Agent.PYTHON_CMD+" -u "+script_file, stdout=sub.PIPE, stderr=sub.PIPE, universal_newlines=True, cwd=script_folder)
         
-        #print("process:", process)
+        print("process:", process)
 
         # Update the job info with status "RUNNING"
         self.job.pid = process.pid
@@ -392,7 +423,7 @@ class Agent:
                 print("\n\nExiting because the process is no longer alive\n\n")
                 break
             if(output):
-                print("\n\nOUTPUT: >"+output+"<\n\n")
+                print("\n\nOUTPUT: >", output, "<\n\n")
                 RunDAO.update_add_output(self.run ,output.strip())
 
         return_process_code = process.returncode
@@ -400,16 +431,17 @@ class Agent:
         run_register = list(runs_collection.find({ '_id': self.run._id } ) ) [0]
         if('status' in run_register):
             actual_status = run_register['status']
+            print("\n\nActual Status: ", actual_status)
 
-        print("\n\nActual Status: "+actual_status+"\n\n")
+        print(">> ", return_process_code, actual_status, run_register)
 
         if(return_process_code == 1):
             print("\n\n Something goes wrong \n\n")
             error = process.stderr.readlines()
-            print("\n\n The error "+error+" will be logged\n\n")
+            print("\n\n The error ", error, " will be logged\n\n")
             if(error and len(error) != 0):
                 RunDAO.update_add_error(self.run, error)
-                print("\n\n The error "+error+" was logged\n\n")
+                print("\n\n The error ", error, " was logged\n\n")
         
         self.job.end_at = datetime.now()
         self.run.ended_at = self.job.end_at

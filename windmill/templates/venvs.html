@@ -24,7 +24,7 @@
 
 									<div class="form-group col-sm-6">
 										<label for="venvName">Name</label>
-										<input type="text" class="form-control" id="venvName" name="venvName" aria-describedby="venvName" placeholder="Enter Venv name" value="{{ venv['name'] }}">
+										<input type="text" class="form-control" id="venvName" name="venvName" aria-describedby="venvName" placeholder="Enter Venv name" value="{{ venv.name }}">
 									</div>
 
 									<div class="form-group col-sm-6">
@@ -41,7 +41,7 @@
 
 							    <h5 class="mb-0">
 							    	<button type="button" class="btn btn-primary">Save</button>
-									<button type="button" class="btn btn-primary" onclick='confirm_delete("{{venv['name']}}", "{{venv['id']}}")'>Delete</button>
+									<button type="button" class="btn btn-primary" onclick='confirm_delete("{{venv.name}}", "{{venv._id}}")'>Delete</button>
 
 							    	<button class="btn btn-secondary" data-toggle="collapse" data-target="#collapse{{loop.index}}" aria-expanded="true" aria-controls="collapse{{loop.index}}">
 							        	Show Packages
@@ -52,9 +52,9 @@
 							<div id="collapse{{loop.index}}" class="collapse" aria-labelledby="heading{{loop.index}}" data-parent="#accordion">
 								<div class="card-body">
 									<div class="chips chips-placeholder input-field">
-										{% for pkg in venv['pkgs'] %}
+										{% for pkg in venv.packages %}
 											<div class="chip">
-											    {{pkg['name']}}{{pkg['version']}}
+											    {{pkg.name}}{{pkg.version_specifier}}{{pkg.version}}
 												<i class="close material-icons">&times</i>
 											</div>
 										{% endfor %}

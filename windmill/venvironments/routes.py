@@ -26,29 +26,28 @@ context = "apl-wm-crm"
 import threading
 import subprocess
 
-def popen_and_call(on_exit, cmd, cwd): #, venv_name
+def popen_and_call(on_exit, cmd, cwd, venv_name):
     """
         Runs the given args in a subprocess.Popen, and then calls the function
         on_exit when the subprocess completes.
         on_exit is a callable object, and popen_args is a list/tuple of args that 
         would give to subprocess.Popen.
     """
-    def run_in_thread(on_exit, cmd, cwd): #, venv_name
+    def run_in_thread(on_exit, cmd, cwd, venv_name): #, venv_name
         print("I WILL WAIT - cmd - "+cwd+"")
         proc = sub.Popen(cmd, cwd=cwd)
         proc.wait()
         print("WAIT IS OVER")
-        on_exit(cwd) #, venv_name
-    thread = threading.Thread(target=run_in_thread, args=(on_exit, cmd, cwd)) # , venv_name
+        on_exit(cwd, venv_name) #, venv_name
+    thread = threading.Thread(target=run_in_thread, args=(on_exit, cmd, cwd, venv_name)) # , venv_name
     thread.start()
     # returns immediately after the thread starts
     return thread
 
-def _add_packages_installed(folder):
+def _add_packages_installed(folder, venv_name):
     print("_add_packages_installed")
-    print("="*100, "\n\natualizando...\n\n", "="*100)
+    print("="*100, "\n\nupdating...\n\n", "="*100)
     pkgs = _get_packages(folder)
-    venv_name = "env"
     venv = VEnvironment(venv_name, packages=pkgs)
     print("VEnv is now with all packages", venv)
     return VEnvironmentDAO.insert(venv)
@@ -106,12 +105,13 @@ def _get_venvs():
     #         ))
     #     } for folder in folders]
 
-    associated = list(map(lambda venv: {'associated_archives' : list(
-            filter(
-                lambda resource : os.path.isdir(os.path.join(BASE_DIR, venv.name, resource)),
-                os.listdir(os.path.join(BASE_DIR, venv.name))
-            ))}, venvs))
-    print(associated)
+    # associated = list(map(lambda venv: {'associated_archives' : list(
+    #         filter(
+    #             lambda resource : os.path.isdir(os.path.join(BASE_DIR, venv.name, resource)),
+    #             os.listdir(os.path.join(BASE_DIR, venv.name))
+    #         ))}, venvs))
+    # print(associated)
+    print([(venv.name, len(venv.packages)) for venv in venvs])
     return venvs
 
 def _new_virtual_environment(req_form):
@@ -186,7 +186,7 @@ def environments():
             #p = sub.Popen(["pipenv", "install", "-r", requirements_filename], cwd=full_foldername)
 
             #val = popen_and_call(_add_packages_installed, ["pipenv", "install", "-r", requirements_filename], full_foldername, venv.name)
-            popen_and_call(_add_packages_installed, ["pipenv", "install", "-r", requirements_filename], full_foldername)
+            popen_and_call(_add_packages_installed, ["pipenv", "install", "-r", requirements_filename], full_foldername, venvName)
 
             flash({'title' : "Virtual Env", 'msg' : "Virtual Env {} will be created asynchronously successfully".format(full_foldername), 'type' : MsgTypes['SUCCESS']})
             

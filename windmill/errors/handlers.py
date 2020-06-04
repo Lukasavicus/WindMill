@@ -18,10 +18,9 @@ from windmill.main.utils import trace, divisor, __resolve_path, MsgTypes
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 errors = Blueprint('errors', __name__)
-context = "apl-wm-crm"
 
 # === HELPERS functions =======================================================
-@errors.route('/'+context+'/apl-wm-crm/test_err')
+@errors.route('/apl-wm-crm/test_err')
 def test():
     sched = app.config['SCHEDULER']
     print("#"*50, "\n\n")

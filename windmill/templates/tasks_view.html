@@ -101,7 +101,7 @@
 
     <div class="container">
     	<section id="create-jobs" style="padding-bottom: 100px;">
-    		<form id="form-task" method="POST" action="/">
+    		<form id="form-task" method="POST" action="{{ url_for('tasks.home') }}">
                 <input type="hidden" id="taskId" name="taskId" aria-describedby="taskId">
     			<div class = "row">
     			

@@ -13,12 +13,31 @@ from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 
+class PrefixMiddleware(object):
+
+    def __init__(self, app, prefix=''):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+
+        if environ['PATH_INFO'].startswith(self.prefix):
+            environ['PATH_INFO'] = environ['PATH_INFO'][len(self.prefix):]
+            environ['SCRIPT_NAME'] = self.prefix
+            return self.app(environ, start_response)
+        else:
+            start_response('404', [('Content-Type', 'text/plain')])
+            return ["This url does not belong to the app.".encode()]
+
 def create_app(test_config=None):
     """
         Factory function to create an instance of the app
     """
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+    app.debug = True
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/apl-wm-crm')
+    #app.config['APPLICATION_ROOT'] = '/apl-wm-crm'
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'windmill.sqlite'),
@@ -84,9 +103,9 @@ from windmill.tasks.routes import tasks
 from windmill.venvironments.routes import venvironments
 from windmill.errors.handlers import errors
 
-app.register_blueprint(archives)
-app.register_blueprint(main)
-app.register_blueprint(runs)
-app.register_blueprint(tasks)
-app.register_blueprint(venvironments)
-app.register_blueprint(errors)
+app.register_blueprint(archives)#, url_prefix='/apl-wm-crm')
+app.register_blueprint(main)#, url_prefix='/apl-wm-crm')
+app.register_blueprint(runs)#, url_prefix='/apl-wm-crm')
+app.register_blueprint(tasks)#, url_prefix='/apl-wm-crm')
+app.register_blueprint(venvironments)#, url_prefix='/apl-wm-crm')
+app.register_blueprint(errors)#, url_prefix='/apl-wm-crm')
