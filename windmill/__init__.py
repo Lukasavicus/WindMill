@@ -9,6 +9,8 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+import json_logging, logging, sys
+
 from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
@@ -36,13 +38,11 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.debug = True
-    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/apl-wm-crm')
-    #app.config['APPLICATION_ROOT'] = '/apl-wm-crm'
+
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'windmill.sqlite'),
     )
-    app.config['SECRET_KEY'] = ''
 
     ## SQL Alchemy configs
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
@@ -66,10 +66,22 @@ def create_app(test_config=None):
     #db.init_app(app)
 
     app.config.from_object('config')
-    app.secret_key = 'safra_dev_app'
-    #app.config['UPLOAD_FOLDER'] = os.path.join('windmill', 'uploads')
+    
+    # Set the application root, by default = "/". Change this to add a "context" to all routes
+    app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix=app.config["APPLICATION_ROOT"])
+
+    if(app.config["LOG_FLAG"] == True):
+        json_logging.ENABLE_JSON_LOGGING = True
+        json_logging.init_flask()
+        json_logging.init_request_instrument(app)
+        
+        # init the logger as usual
+        logger = logging.getLogger(app.config["LOGGER_NAME"])
+        logger.setLevel(logging.DEBUG)
+        logger.addHandler(logging.StreamHandler(sys.stdout))
+
     app.config['UPLOAD_FOLDER'] =  os.path.join(app.root_path, 'uploads')
-    app.config['python_cmd'] = 'python' if platform.system() == 'Windows' else 'python3'
+    app.config['PYTHON_CMD'] = 'python' if platform.system() == 'Windows' else 'python3.7'
 
     app.config['SCHEDULER'] = BlockingScheduler()
     print(hex(id(app.config['SCHEDULER'])))
@@ -83,7 +95,6 @@ db = SQLAlchemy(app)
 
 # add mongo url to flask config, so that flask_pymongo can use it to make connection
 #app.config['MONGO_URI'] = os.environ.get('DB')
-#app.config['MONGO_URI'] =  "mongodb://127.0.0.1:27017/wm" # windmill
 mongo = PyMongo(app)
 
 # use the modified encoder class to handle ObjectId & datetime object while jsonifying the response.
@@ -101,11 +112,13 @@ from windmill.main.routes import main
 from windmill.runs.routes import runs
 from windmill.tasks.routes import tasks
 from windmill.venvironments.routes import venvironments
+from windmill.dev.routes import dev
 from windmill.errors.handlers import errors
 
-app.register_blueprint(archives)#, url_prefix='/apl-wm-crm')
-app.register_blueprint(main)#, url_prefix='/apl-wm-crm')
-app.register_blueprint(runs)#, url_prefix='/apl-wm-crm')
-app.register_blueprint(tasks)#, url_prefix='/apl-wm-crm')
-app.register_blueprint(venvironments)#, url_prefix='/apl-wm-crm')
-app.register_blueprint(errors)#, url_prefix='/apl-wm-crm')
+app.register_blueprint(archives)
+app.register_blueprint(main)
+app.register_blueprint(runs)
+app.register_blueprint(tasks)
+app.register_blueprint(venvironments)
+app.register_blueprint(dev)
+app.register_blueprint(errors)

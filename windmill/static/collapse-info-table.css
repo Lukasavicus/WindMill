@@ -3,7 +3,7 @@ tr td.terminal-ish {
     background: #212529;
     color: lightgreen;
     border: none;
-    line-height: 50%;
+    /* line-height: 50%; */
     height: 50%;
     font-size: small;
 }
@@ -13,7 +13,7 @@ tr td.terminal-ish-error {
     background: #212529;
     color: red;
     border: none;
-    line-height: 50%;
+    /* line-height: 50%; */
     height: 50%;
     font-size: small;
 }

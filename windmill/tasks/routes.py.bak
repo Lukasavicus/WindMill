@@ -89,11 +89,8 @@ def _stop_task(job_id):
         print("tasks", "STOP invoked")
         job = JobDAO.recover_by_id(job_id)
         if(job != None):
-            if(job.isAlive()):
-                job.stop()
-                return {'response' : app.config['SUCCESS'], 'msg' : "Job "+job.name+" is now stoped"}
-            else:
-                return {'response' : app.config['ERROR'], 'err' : "Job "+job.name+" was not running to be paused", 'statusCode' : 403}
+            job.stop()
+            return {'response' : app.config['SUCCESS'], 'msg' : "Job "+job.name+" is now stoped"}
         else:
             return {'response' : app.config['ERROR'], 'err' : "Job with id: "+job_id+" not found", 'statusCode' : 404}
     except Exception as e:
@@ -135,11 +132,11 @@ def api_task(job_id):
         if(job != None):
             if(request.method == "DELETE"):
                 JobDAO.delete(job)
-                return {'response' : app.config['SUCCESS'], 'msg' : f"Job {job.name} deleted successfully"}
+                return app.config['SUCCESS']
 
             elif(request.method == "PUT"):
                 if(job.no_runs != 0):
-                    raise Exception("Could not update job '"+job.name+"' because this job already ran once")
+                    raise Exception("Could not update job '"+job.name+"' because this job already runned once")
 
                 job.name = request.form['taskName'] if(request.form['taskName'].strip() != '') else job.name
                 job.entry_point = request.form['taskEntry'] if(request.form['taskEntry'].strip() != '') else job.entry_point
@@ -177,18 +174,30 @@ def api_info_task(job_id):
 
 @tasks.route('/api/task/play/<job_id>')
 def api_play_task(job_id):
+	#logging.getLogger("wm-logger")
+    print("api_play_task", job_id, file=sys.stdout)
     ans = _play_task(job_id)
-    return ans
+    print("tasks", "PLAY return", ans, app.config['SUCCESS'], ans == app.config['SUCCESS'])
+    if(ans['response'] == app.config['SUCCESS']):
+        return jsonify(success=True)
+    else:
+        return ans
 
 @tasks.route('/api/task/stop/<job_id>')
 def api_stop_task(job_id):
     ans = _stop_task(job_id)
-    return ans
+    if(ans == app.config['SUCCESS']):
+        return jsonify(success=True)
+    else:
+        return ans
 
 @tasks.route('/api/task/schedule/<task_id>')
 def api_schedule_task(task_id):
     ans = _schedule_task(task_id)
-    return ans
+    if(ans == app.config['SUCCESS']):
+        return jsonify(success=True)
+    else:
+        return ans
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -209,8 +218,7 @@ def home():
 @tasks.route('/task/play/<task_id>')
 def play_task(task_id):
     ans = _play_task(task_id)
-    print("ANS", ans)
-    if(ans['response'] == app.config['SUCCESS']):
+    if(ans == app.config['SUCCESS']):
         # flash({'title' : "TASKS", 'msg' : ans['msg'], 'type' : MsgTypes['SUCCESS']})
         return redirect(url_for('tasks.home'))
     else:
@@ -220,7 +228,7 @@ def play_task(task_id):
 @tasks.route('/task/stop/<task_id>')
 def stop_task(task_id):
     ans = _stop_task(task_id)
-    if(ans['response'] == app.config['SUCCESS']):
+    if(ans == app.config['SUCCESS']):
         return redirect(url_for('tasks.home'))
     else:
         flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
@@ -229,9 +237,134 @@ def stop_task(task_id):
 @tasks.route('/task/schedule/<task_id>')
 def schedule_task(task_id):
     ans = _schedule_task(task_id)
-    if(ans['response'] == app.config['SUCCESS']):
+    if(ans == app.config['SUCCESS']):
         return redirect(url_for('tasks.home'))
     else:
         flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
         return abort(ans['statusCode'])
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+@tasks.route('/dev/sub')
+def dev_sub():
+    print("dev_sub")
+    try:
+        print("Testing python --version")
+        sub.Popen("python --version")
+    except Exception as e:
+        print("Exception", e)
+    try:
+        print("Testing python3 --version")
+        sub.Popen("python3 --version")
+    except Exception as e:
+        print("Exception", e)
+    try:
+        print("Testing ls")
+        sub.Popen("ls")
+        sub.Popen("cat Dockerfile")
+        print("ls ok")
+    except Exception as e:
+        print("Exception", e)
+    try:
+        print("Testing os - ls")
+        os.system("ls")
+        print("ls os ok")
+    except Exception as e:
+        print("Exception", e)
+    try:
+        print("Testing python3.7 --version")
+        sub.Popen("python3.7 --version")
+    except Exception as e:
+        print("Exception", e)
+    try:
+        print("Testing ", job_id)
+        sub.Popen(str(job_id))
+        print(job_id, " SUCCESS ")
+    except Exception as e:
+        print("Exception", e)
+    print("Tests are over")
+    return jsonify(success=True)
+
+@tasks.route('/dev/subp/<command>')
+def dev_sub_p(command):
+    print("dev_sub")
+    try:
+        print("Testing ", command)
+        sub.Popen(str(command))
+        print(command, " SUCCESS ")
+    except Exception as e:
+        print("Exception", e)
+    print("Tests are over")
+    return jsonify(success=True)
+
+@tasks.route('/dev/subps/<command>')
+def dev_sub_ps(command):
+    print("dev_sub")
+    try:
+        print("Testing ", command)
+        sub.Popen(str(command), shell=True)
+        print(command, " SUCCESS ")
+    except Exception as e:
+        print("Exception", e)
+    print("Tests are over")
+    return jsonify(success=True)
+
+@tasks.route('/dev/subpi/<command>')
+def dev_sub_pi(command):
+    print("dev_sub")
+    try:
+        print("Testing ", command)
+        cmd_arr = command.split(' ')
+        sub.Popen(cmd_arr)
+        print(command, " SUCCESS ")
+    except Exception as e:
+        print("Exception", e)
+    print("Tests are over")
+    return jsonify(success=True)
+
+@tasks.route('/dev/subos/<command>')
+def dev_sub_os(command):
+    print("dev_sub")
+    try:
+        print("Testing ", command)
+        os.system(str(command))
+        print(command, " SUCCESS ")
+    except Exception as e:
+        print("Exception", e)
+    print("Tests are over")
+    return jsonify(success=True)
+
+@tasks.route('/dev/cmd', methods=['GET', 'POST'])
+def dev_cmd():
+    print("dev_cmd")
+    try:
+        if(request.method == "GET"):
+            return render_template("term.html")
+        elif(request.method == "POST"):
+            command = request.form["cmdTextArea"]
+            print(type(command))
+            exe = request.form["cmdExecutor"]
+            
+            print("Testing ", command)
+
+            if(exe == "os"):
+                os.system(command)
+            elif(exe == "sub"):
+                sub.Popen(command) #, cwd="."
+            elif(exe == "subsp"):
+                cmd = command.split(" ")
+                sub.Popen(cmd) #, cwd="."
+            
+            print(command, " SUCCESS ")
+            
+            return render_template("term.html")
+        #return {'response' : app.config['ERROR'], 'err' : "/api/task does not accept this HTTP verb", 'statusCode' : 403}
+        flash({'title' : "ERROR", 'msg' : "/api/task does not accept this HTTP verb", 'type' : MsgTypes['ERROR']})
+        return render_template("term.html")
+        #abort(403)
+    except Exception as e:
+        print("tasks", "INTERNAL ERROR", e)
+        #return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
+        flash({'title' : "ERROR", 'msg' : str(e), 'type' : MsgTypes['ERROR']})
+        #abort(500)
+        return render_template("term.html")

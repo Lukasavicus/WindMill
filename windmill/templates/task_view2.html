@@ -52,7 +52,6 @@
 					<tbody>
 					{% for job in jobs %}
 						<tr>
-							<td style="display: none;">{{job._id}}</td>
 							<td>{{job.name}}</td>
 							<td>{{job.entry_point}}</td>
 							<td>{{job.start_at}}</td>
@@ -60,14 +59,14 @@
 							<td>{{job.last_exec_status}}</td>
 							<td>{{job.cron}}</td>
 							<td>{{job.no_runs}}</td>
-							<td><i onclick='play("{{loop.index}}")' class="fa fa-play"></i></td>
+							<td><i onclick='play("{{job._id}}")' class="fa fa-play"></i></td>
 							<!-- <td><a href="{{ url_for('tasks.play_task', task_id=job._id) }}"><i class="fa fa-play"></i></a></td> -->
-							<td><i onclick='stop("{{loop.index}}")' class="fa fa-stop"></i></td>
-							<td><i onclick='schedule("{{loop.index}}")' class="fa fa-calendar"></i></td>
-							<td><i onclick='edit("{{loop.index}}")' class="fa fa-edit"></i></td>
-							<td><i onclick='drop("{{loop.index}}");' class="fa fa-trash"></i></td>
+							<td><i onclick='stop("{{job._id}}")' class="fa fa-stop"></i></td>
+							<td><i onclick='schedule("{{job._id}}")' class="fa fa-calendar"></i></td>
+							<td><i onclick='edit("{{job._id}}")' class="fa fa-edit"></i></td>
+							<td><i onclick='drop("{{job._id}}");' class="fa fa-trash"></i></td>
 							<td><i onclick='alert("hey")' class="fa fa-copy"></i></td>
-							<!-- <td><i onclick='modal_info_click("{{loop.index}}")' data-toggle="modal" data-target="#modal-info" class="fa fa-info"></i></td> -->
+							<!-- <td><i onclick='modal_info_click("{{job._id}}")' data-toggle="modal" data-target="#modal-info" class="fa fa-info"></i></td> -->
 						</tr>
 					{% endfor %}
 				</tbody>
@@ -166,7 +165,15 @@
     			</div>
 
     			<div class="row align-items-center">
-					
+					<!--
+					<div class="col-sm-1">
+    					<div class="form-group">
+    						<label for="taskCronNoExecs"># Execs</label>
+    						<input type="number" min=0 value=0 class="form-control" name="taskCronNoExecs" id="taskCronNoExecs">
+    					</div>
+					</div>
+					-->
+
     				<div class="col-sm-1">
     					<div class="form-group">
     						<label for="taskCronValueHours">Hours</label>
@@ -184,15 +191,7 @@
     						<label for="taskCronValueSecs">Secs</label>
     						<input type="number" min=0 max=59 value=0 class="form-control" name="taskCronValueSecs" id="taskCronValueSecs">
     					</div>
-					</div>
-					
-					<!--
-					<div class="col-sm-1 hidden">
-    					<div class="form-group">
-    						<label for="taskCronNoExecs"># Execs</label>
-    						<input type="number" min=0 value=0 class="form-control" name="taskCronNoExecs" id="taskCronNoExecs">
-    					</div>
-					</div>
+    				</div>
 					
 					<!--
     				<div class="col-sm-2">
@@ -202,24 +201,9 @@
     					</div>
 					</div>
 					-->
-
-					<a href="#" class="ml-auto" data-toggle="collapse" data-target="#collapseOptions" aria-expanded="true" aria-controls="collapseOptions"> Advanced Options </a>
-				</div>
-
-				<div id="collapseOptions" class="collapse">
-					<div class="row">
-						<div class="col-sm-4">
-							<div class="form-group">
-								<label for="taskCronNoExecs">Cron Expression</label>
-								<input type="text" class="form-control" name="taskCronExpression" id="taskCronExpression" placeholder=" /5 * * * ">
-							</div>
-						</div>
-
-					</div>
-				</div>
-
-				<button id="submit-button" type="submit" class="btn btn-primary">Submit</button>
-
+					
+    			</div>
+    			<button id="submit-button" type="submit" class="btn btn-primary">Submit</button>
     		</form>
     	</section>
 	</div>

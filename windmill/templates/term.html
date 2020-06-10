@@ -1,0 +1,54 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <section>
+        <div class="container">
+            <form method="POST" action="/apl-wm-crm/dev/cmd">
+                <div class="form-group">
+                    <label for="cmdTextArea">Command Line</label>
+                    <textarea class="form-control" id="cmdTextArea" name="cmdTextArea" rows="1"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="cmdExecutor">Command BackEnd Executor</label>
+                    <select class="form-control" id="cmdExecutor" name="cmdExecutor">
+                    <option value="os">OS.system</option>
+                    <option value="subsp">Subprocess - Splited</option>
+                    <option value="sub">Subprocess</option>
+                    </select>
+                </div>
+                <button id="submit-btn" type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th> Command </th>
+                        <th> Copy </th>
+                    </tr>
+                </thead>
+                <tbody id="hist-cmds"></tbody>
+            </table>
+        </div>
+    </section>
+    <script>
+        let submit_btn = document.querySelector("#submit-btn");
+        // submit_btn.addEventListener('click', function(event){
+        //     //event.preventDefault();
+        //     let cmd = document.querySelector("#cmdTextArea").value;
+        //     add_on_hist_cmds(cmd);
+        //     return true;
+        // });
+        function add_on_hist_cmds(cmd){
+            let table = document.getElementById("hist-cmds");
+            let row = table.insertRow(0);
+            row.innerHTML = `<tr>
+                <td>${cmd}</td>
+                <td> copy </td>
+            </tr>`;
+        }
+    </script>
+{% endblock %}
