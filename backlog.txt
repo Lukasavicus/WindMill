@@ -66,3 +66,12 @@ BACKLOG:
         -> minute(0-59), hour(0-23), day(1-31), month(1-12), day-week(0-6)
 
     Talvez implementar a estratégia de thread + subprocess
+
+    Verificar Pipenv
+    https://pipenv-fork.readthedocs.io/en/latest/diagnose.html
+    https://medium.com/@edkrueger_16881/common-errors-and-how-to-solve-them-why-wont-it-lock-8f5e57111f23
+    https://towardsdatascience.com/common-pipenv-errors-3a6f8ce81562
+    https://docs.python.org/3/library/venv.html
+    https://github.com/python/cpython/blob/3.8/Lib/venv/scripts/posix/activate.fish
+    https://gist.github.com/vsajip/4673395
+    https://github.com/pypa/get-pip
