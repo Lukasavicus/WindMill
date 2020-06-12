@@ -5,6 +5,7 @@ from bson.objectid import ObjectId
 import platform
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -83,7 +84,10 @@ def create_app(test_config=None):
     app.config['UPLOAD_FOLDER'] =  os.path.join(app.root_path, 'uploads')
     app.config['PYTHON_CMD'] = 'python' if platform.system() == 'Windows' else 'python3.7'
 
-    app.config['SCHEDULER'] = BlockingScheduler()
+    #app.config['SCHEDULER'] = BlockingScheduler()
+    app.config['SCHEDULER'] = BackgroundScheduler()
+    app.config['SCHEDULER'].start()
+    
     print(hex(id(app.config['SCHEDULER'])))
 
     return app

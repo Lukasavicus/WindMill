@@ -91,7 +91,7 @@ def _stop_task(job_id):
         if(job != None):
             if(job.isAlive()):
                 job.stop()
-                return {'response' : app.config['SUCCESS'], 'msg' : "Job "+job.name+" is now stoped"}
+                return {'response' : app.config['SUCCESS'], 'msg' : "Job "+job.name+" is now stopped"}
             else:
                 return {'response' : app.config['ERROR'], 'err' : "Job "+job.name+" was not running to be paused", 'statusCode' : 403}
         else:
@@ -102,7 +102,7 @@ def _stop_task(job_id):
 
 def _schedule_task(job_id):
     try:
-        print("tasks", "SCHEDULE invoked")
+        print("tasks", "SCHEDULE invoked", job_id)
         job = JobDAO.recover_by_id(job_id)
         if(job != None):
             job.schedule()

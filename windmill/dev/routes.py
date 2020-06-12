@@ -54,4 +54,32 @@ def dev_cmd():
         #abort(500)
         return render_template("term.html")
 
+def __print_APScheduler_job(job):
+    import types
+    _repr = []
+    for attr in dir(job):
+        if(attr[0] != '_' and type(getattr(job, attr)) != types.MethodType):
+            _repr.append(f"{attr} : {getattr(job, attr)}")
+    return ','.join(_repr)
+
+@dev.route('/dev/process/', methods=['GET'])
+def dev_process():
+    print("dev_process")
+    try:
+        if(request.method == "GET"):
+            scheduler = app.config['SCHEDULER']
+            print(scheduler, dir(scheduler))
+            jobs = scheduler.get_jobs()
+            print(jobs)
+            #json_jobs = [f"id: {job.id}, name: {job.name}, func : {func}, func_ref : {func_ref}, info: {str(job)}" for job in jobs]
+            json_jobs = [f"{{ {__print_APScheduler_job(job)} }}" for job in jobs]
+            json_scheduler = __print_APScheduler_job(scheduler)
+            return jsonify({'jobs' : json_jobs, 'scheduler' : json_scheduler})
+        
+    except Exception as e:
+        print("dev", "INTERNAL ERROR", e)
+        flash({'title' : "ERROR", 'msg' : str(e), 'type' : MsgTypes['ERROR']})
+        return render_template("term.html")
+
+
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

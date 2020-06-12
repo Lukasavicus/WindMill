@@ -112,44 +112,46 @@ let ACTION_FORM = "POST";
 
 // === ACTIONS ====================================================
 	function get_task_row(row_id){
-		return document.querySelector("#jobs").querySelector("tbody").children[row_id];
+		return document.querySelector("#jobs").querySelector("tbody").children[row_id-1];
 	}
 
 	function get_job_id(row_id){
-		let row = get_task_row(row_id-1);
+		let row = get_task_row(row_id);
 		return row.cells[0].textContent;
 	}
 
 	function get_job_name(row_id){
-		let row = get_task_row(row_id-1);
+		let row = get_task_row(row_id);
 		return row.cells[1].textContent;
 	}
 
 	function get_job_no_runs(row_id){
-		let row = get_task_row(row_id-1);
+		let row = get_task_row(row_id);
 		return row.cells[6].textContent;
 	}
 
 	function play(row_id){
 		let job_name = get_job_name(row_id);
 		notify(`Playing Job: '${job_name}'`, 'success');
-		action("/apl-wm-crm/api/task/play/", row_id)
+		action("/apl-wm-crm/api/task/play/", row_id);
 	}
 	function stop(row_id){
 		let job_name = get_job_name(row_id);
-		notify(`Stoping Job: '${job_name}'`, 'success');
-		action("/apl-wm-crm/api/task/stop/", row_id)
+		//notify(`Stopping Job: '${job_name}'`, 'success');
+		action("/apl-wm-crm/api/task/stop/", row_id);
 	}
 	function schedule(row_id){
-		notify(`Scheduling Job: '${task_id}'`, 'success');
-		action("/apl-wm-crm/api/task/schedule/", row_id)
+		let job_name = get_job_name(row_id);
+		notify(`Scheduling Job: '${job_name}'`, 'success');
+		action("/apl-wm-crm/api/task/schedule/", row_id);
 	}
 	function drop(row_id){
-		action("/apl-wm-crm/api/task/", row_id, { method : 'DELETE' })
+		action("/apl-wm-crm/api/task/", row_id, { method : 'DELETE' });
 	}
 
 	function action(url_base, row_id, fetch_options={}){
 		let task_id = get_job_id(row_id);
+		console.log("Stopping", task_id);
 		fetch(`${url_base}${task_id}`, fetch_options)
 			.then(response => response.json())
 			.then(data => process_answer(data))
@@ -177,14 +179,22 @@ let ACTION_FORM = "POST";
 
 		data.forEach(job =>{
 			let idx = tbody.childElementCount;
-			let row = tbody.insertRow(idx)
+			let row = tbody.insertRow(idx);
+			idx++; // Indexing the rows below should start with 1, not 0.
 			row.innerHTML = `
-				<td>${job.name}</td>
+				<td style="display: none;">${job._id}</td>
+				<td>
+					<a href="job/${job._id}/runs"> ${job.name} </a>
+				</td>
 				<td>${job.entry_point}</td>
-				<td></td>
-				<!-- <td></td> -->
 				<td>${job.last_exec_status}</td>
-				<td>"/s /0 /0 /0 /e"</td>
+				<!-- <td>{{job.last_run}}</td> -->
+				<td>${job.status}</td>
+				<td class="no-wrap" data-value="{{job.cron}}">
+					${ (job.start_at != null && job.start_at != "") ? `<i class="fa fa-calendar no-icon" data-value="${job.start_at}" title="${job.start_at}"></i>` : ""}
+					${job.cron}
+					${ (job.end_at != null && job.end_at != "") ? `<i class="fa fa-calendar no-icon" data-value="${job.end_at}" title="${job.end_at}"></i>` : ""}
+				</td>
 				<td>${job.no_runs}</td>
 				<td><i onclick='play("${idx}")' class="fa fa-play"></i></td>
 				<!-- <td><a href="/apl-wm-crm/task/play/${idx}"><i class="fa fa-play"></i></a></td> -->
@@ -275,13 +285,18 @@ let ACTION_FORM = "POST";
 
 		console.log(">>", formData);
 
-		fetch(`/apl-wm-crm/api/task/${task_id}`, {
-			method: 'PUT',
-			body: formData
+		action("/apl-wm-crm/api/task/", row_id, {
+				method: 'PUT',
+				body: formData
+			})
 
-		})
-		.then(response => console.log(response.json()))
-		.catch(response => console.log(response.json()));
+		// fetch(`/apl-wm-crm/api/task/${task_id}`, {
+		// 	method: 'PUT',
+		// 	body: formData
+
+		// })
+		// .then(response => console.log(response.json()))
+		// .catch(response => console.log(response.json()));
 	}
 
 	function notify(msg, msg_type, title=""){
@@ -295,6 +310,10 @@ let ACTION_FORM = "POST";
 			</button>
 		`;
 		document.querySelector('#messaging').appendChild(div);
+	}
+
+	function cron_format(elem, cron_expression){
+		alert(elem);
 	}
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -21,7 +21,6 @@ from windmill.models import Run, RunDAO, JobDAO
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 runs = Blueprint('runs', __name__)
-context = "apl-wm-crm"
 
 # === WRAPPED FUNCTIONS =======================================================
 def _runs_handler(request):
@@ -37,9 +36,9 @@ def _runs_handler(request):
     """
     try:
         if(request.method == "GET"):
-            print("runs", "home-GET")
+            print("runs", "_runs_handler-GET")
         _runs = RunDAO.recover()
-        print("runs", _runs)
+        #print("runs", _runs)
         if(_runs != None):
             return {'response' : app.config['SUCCESS'], 'data' : _runs}
         else:
@@ -48,33 +47,55 @@ def _runs_handler(request):
     except Exception as e:
         print("_runs_handler", "INTERNAL ERROR", e)
         return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
+
+def _job_runs_handler(request, job_id):
+    """
+        Function that receives a request and return a response accordly the
+        following rules:
+        GET: Execute the method RunDAO.recover() and return a list of all jobs
+        runnings.
+        ERROR: This errors may occur depending on these scenarios:
+            AssertionError: If the connection is refused by the database or the
+            collection 'runs' don't exist.
+            DatabaseError: If something goes wrong with RunDAO
+    """
+    try:
+        if(request.method == "GET"):
+            print("runs", "_job_runs_handler-GET")
+        _runs = RunDAO.recover_by_job_id(job_id)
+        #print("runs", _runs)
+        if(_runs != None):
+            return {'response' : app.config['SUCCESS'], 'data' : _runs}
+        else:
+            #raise Exception("Could not query 'runs' collection. This happened because either the collection don't exist or the database refused connection")
+            return {'response' : app.config['SUCCESS'], 'data' : []}
+    except Exception as e:
+        print("_job_runs_handler", "INTERNAL ERROR", e)
+        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 # === API routes ==============================================================
 @runs.route('/api/runs/', methods=["GET"])
 def api_runs():
     ans = _runs_handler(request)
-    print("api_runs", ans, jsonify(ans))
+    #print("api_runs")
     if(ans['response'] == app.config['SUCCESS']):
-        runs = ans['data']
-        runs_json = [run.jsonify() for run in runs]
+        _runs = ans['data']
+        runs_json = [run.jsonify() for run in _runs]
         return jsonify(runs_json)
     else:
         return ans
 
 @runs.route('/api/job/<job_id>/runs', methods=["GET"])
 def api_job_runs(job_id):
-    try:
-        if(request.method == "GET"):
-            print("runs", "home-GET")
-        runs = RunDAO.recover_by_job_id(job_id)
-        assert runs != None, "Could not query 'runs' collection. This happened because either the collection don't exist or the database refused connection"
-        runs_json = [run.jsonify() for run in runs]
-        print("runs_json", runs_json)
+    ans = _job_runs_handler(request, job_id)
+    #print("api_job_runs")
+    if(ans['response'] == app.config['SUCCESS']):
+        _runs = ans['data']
+        runs_json = [run.jsonify() for run in _runs]
         return jsonify(runs_json)
-    except Exception as e:
-        print("runs", "INTERNAL ERROR", e)
-        return {'response' : app.config['ERROR'], 'err' : str(e), 'statusCode' : 500}
+    else:
+        return ans
 
 @runs.route('/api/run/<run_id>', methods=["GET"])
 def api_run(run_id):
@@ -97,6 +118,15 @@ def api_run(run_id):
 @runs.route('/runs', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
 def home():
     ans = _runs_handler(request)
+    if(ans['response'] == app.config['SUCCESS']):
+        return render_template('runs_view.html', runs=ans['data'])
+    else:
+        flash({'title' : "ERROR", 'msg' : ans['err'], 'type' : MsgTypes['ERROR']})
+        return render_template('runs_view.html', runs=[])
+
+@runs.route('/job/<job_id>/runs', methods=["GET","POST"]) # TODO: Remove POST, to prevent when F5 pressed make a new request to this endpoint ?
+def job_runs(job_id):
+    ans = _job_runs_handler(request, job_id)
     if(ans['response'] == app.config['SUCCESS']):
         return render_template('runs_view.html', runs=ans['data'])
     else:

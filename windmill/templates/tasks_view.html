@@ -41,8 +41,8 @@
 					<tr>
 						<th scope="col">NAME</th>
 						<th scope="col">ENTRY POINT</th>
-						<th scope="col" class="fit">STARTED AT</th>
-						<!-- <th scope="col">LAST RUN</th> -->
+						<!-- <th scope="col" class="fit">STARTED AT</th> -->
+						<th scope="col">LAST EXECUTION</th>
 						<th scope="col">STATUS</th>
 						<th scope="col" class="col-lg fit">CRON PARAMS</th>
 						<th scope="col"># RUNS</th>
@@ -53,12 +53,22 @@
 					{% for job in jobs %}
 						<tr>
 							<td style="display: none;">{{job._id}}</td>
-							<td>{{job.name}}</td>
+							<td>
+								<a href="{{ url_for('runs.job_runs', job_id=job._id)}}"> {{job.name}} </a>
+							</td>
 							<td>{{job.entry_point}}</td>
-							<td>{{job.start_at}}</td>
-							<!-- <td>{{job.last_run}}</td> -->
 							<td>{{job.last_exec_status}}</td>
-							<td>{{job.cron}}</td>
+							<!-- <td>{{job.last_run}}</td> -->
+							<td>{{job.status}}</td>
+							<td class="no-wrap" data-value="{{job.cron}}">
+								{% if job.start_at != None and job.start_at != ""  %}
+									<i class="fa fa-calendar no-icon" data-value="{{job.start_at}}" title="{{job.start_at}}"></i>
+								{% endif %}
+								{{job.cron}}
+								{% if job.end_at != None and job.end_at != "" %}
+									<i class="fa fa-calendar no-icon" data-value="{{job.end_at}}" title="{{job.end_at}}"></i>
+								{% endif %}
+							</td>
 							<td>{{job.no_runs}}</td>
 							<td><i onclick='play("{{loop.index}}")' class="fa fa-play"></i></td>
 							<!-- <td><a href="{{ url_for('tasks.play_task', task_id=job._id) }}"><i class="fa fa-play"></i></a></td> -->

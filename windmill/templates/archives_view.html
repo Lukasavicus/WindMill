@@ -62,12 +62,11 @@
 		<section id="upload-scripts">
 			<form method="POST" enctype=multipart/form-data action="{{ url_for('archives.upload_file') }}">
 
-				<div class="form-group col-sm-7">
-				    <label for="venvName">Virtual Enviroment</label>
-				    <select type="text" class="form-control" id="venvName" name="venvName" aria-describedby="venvName" placeholder="Enter task name">
-
-				    </select>
-				</div>
+				<!-- #TODO: PIPENV FIX  -->
+				<!-- <div class="form-group col-sm-7">
+					<label for="venvName">Virtual Enviroment</label>
+					<select type="text" class="form-control" id="venvName" name="venvName" aria-describedby="venvName" placeholder="Enter task name"></select>
+				</div> -->
 
 				<input type=file name=file>
 				<input type=submit value=Upload>

@@ -6,12 +6,28 @@ table .table {
 	font-size: 14px
 }
 
-td i .fa{
+td a {
+    color : white;
+}
+
+td a:hover{
+    color : white;
+}
+
+td i.fa{
 	cursor: pointer;
 }
 
-td i .far{
+td i.far{
 	cursor: pointer;
+}
+
+.no-icon{
+	color : white !important;
+}
+
+.no-icon:hover{
+	cursor: default;
 }
 
 td i.fa.fa-play:hover { color : #28a745; }

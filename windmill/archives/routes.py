@@ -36,7 +36,7 @@ def _get_req_absolute_path(requested_path):
         e.g.: venv_a/etl_archive_a/subdir_1/etl_script.py => 
         windmill/uploads/venv_a/etl_archive_a/subdir_1/etl_script.py
     """
-    trace('_get_req_absolute_path')
+    #trace('_get_req_absolute_path')
     BASE_DIR = app.config['UPLOAD_FOLDER'] #"./{}/".format(app.config['UPLOAD_FOLDER'])
     return os.path.join(BASE_DIR, requested_path)
 
@@ -59,7 +59,7 @@ def _dir_listing(req_path=''):
         locations: ?
         isRoot: flag to determine if a archive folder is either a root or not
     """
-    trace('_dir_listing')
+    #trace('_dir_listing')
     abs_path = _get_req_absolute_path(req_path)
     #print("archives", divisor)
     #print("archives", "name", __name__, "archives.root_path", archives.root_path, "req_path", req_path, "abs_path", abs_path)
@@ -94,6 +94,10 @@ def _dir_listing(req_path=''):
     folderEnv = len(resource_tree) == 1 and resource_tree[0] == ''
 
     return (files_info, locations, isRoot, folderEnv)
+
+def _is_folder(filename):
+    file_type = filename.split('.')[1]
+    return file_type == 'zip'
 # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -121,23 +125,30 @@ def upload_file():
             return redirect(request.url)
         if(file):# and allowed_file(file.filename):
             filename = secure_filename(file.filename)
+            
+            #TODO: PIPENV FIX
+            #venvName = request.form['venvName']
+            venvName = "repositório de etls"
 
-            full_filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(full_filename)
-            
-            #print("archives", 'extracting', full_filename)
-            
-            #foldername = filename.split('.')[0]
-            foldername = os.path.join(request.form['venvName'], filename.split('.')[0])
-            full_foldername = os.path.join(app.config['UPLOAD_FOLDER'], foldername)
+            if(_is_folder(filename)):
+                full_filename = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(full_filename)
 
-            os.mkdir(full_foldername)
-            
-            with ZipFile(full_filename, 'r') as zipObj:
-                # Extract all the contents of zip file in current directory
-                zipObj.extractall(full_foldername)
-            #print("archives", 'Finished')
-            os.remove(full_filename)
+                foldername = os.path.join(venvName, filename.split('.')[0])
+                print("folder name", foldername)
+                full_foldername = os.path.join(app.config['UPLOAD_FOLDER'], foldername)
+
+                os.mkdir(full_foldername)
+                
+                with ZipFile(full_filename, 'r') as zipObj:
+                    # Extract all the contents of zip file in current directory
+                    zipObj.extractall(full_foldername)
+                #print("archives", 'Finished')
+                os.remove(full_filename)
+            else:
+                full_filename = os.path.join(app.config['UPLOAD_FOLDER'], venvName, filename)
+                print("Saving file in: ", full_filename)
+                file.save(full_filename)
 
             flash({'title' : "Archive", 'msg' : "Archive "+full_filename+" created successfully.", 'type' : MsgTypes['SUCCESS']})
             (files_info, locations, isRoot, folderEnv) = _dir_listing('')
