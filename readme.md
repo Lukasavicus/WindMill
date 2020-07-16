@@ -104,10 +104,11 @@ O Projeto WindMill está licenciado sob a licença *BSD 3*.
 Consulte a pasta [Exemplos](examples/)
 
 Nela entre outros exemplos você vai encontrar arquivos que exemplifiquem as seguintes situações:
-    - error.py: Ao executar esse Job, você verá o erro na tela de execução de Jobs;
-    - helloworld.py: Simples Job Hello World!;
-    - request.py: Esse arquivo faz uma requisição a um site e retorna uma resposta. Esse arquivo exemplifica um simples _crawler_;
-    - sleepwalking.py: Esse arquivo mostra que a tela de execução de Jobs pode refletir imediatamente a saída de um script.
+
+- error.py: Ao executar esse Job, você verá o erro na tela de execução de Jobs;
+- helloworld.py: Simples Job Hello World!;
+- request.py: Esse arquivo faz uma requisição a um site e retorna uma resposta. Esse arquivo exemplifica um simples _crawler_;
+- sleepwalking.py: Esse arquivo mostra que a tela de execução de Jobs pode refletir imediatamente a saída de um script.
 
 ### 7. Troubleshooting
 
