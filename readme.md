@@ -1,4 +1,13 @@
-# WindMill - Controle de Jobs Eficiente
+![licence-BSD3](https://img.shields.io/github/license/Lukasavicus/WindMill) 
+![tag](https://img.shields.io/github/v/release/Lukasavicus/WindMill)
+![last-commit](https://img.shields.io/github/last-commit/Lukasavicus/WindMill)
+![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)
+
+<p align="center"><img src="readme_files/windmill_black.png"/></p>
+
+# WindMill (beta)
+
+Controle de Jobs Eficiente
 
 ### Descrição
 O Projeto Windmill é um projeto open-source cuja finalidade é prover uma ferramenta de controle para a execução de Jobs escritos em *Python*. Com o WindMill você pode **iniciar** a execução de um job, **parar** a execução de um job ativo ou ainda **agendar** para o job executar de tempos em tempos, numa interface web amigável.

@@ -1,5 +1,3 @@
-uploads/
-
 *.pyc
 __pycache__/
 
@@ -12,3 +10,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
+
+outros/
+
+projectVersion.json
