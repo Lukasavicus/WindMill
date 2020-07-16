@@ -1,5 +1,4 @@
 ![licence-BSD3](https://img.shields.io/github/license/Lukasavicus/WindMill) 
-![tag](https://img.shields.io/github/v/release/Lukasavicus/WindMill)
 ![last-commit](https://img.shields.io/github/last-commit/Lukasavicus/WindMill)
 ![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)
 
@@ -101,6 +100,8 @@ O Time de DataViz do Banco Safra teve um papel fundamental no desenvolvimento de
 O Projeto WindMill está licenciado sob a licença *BSD 3*.
 
 ### 6. Exemplos
+
+Exemplos serão disponibilizados em breve.
 
 ### 7. Troubleshooting
 
