@@ -12,7 +12,7 @@ from flask import current_app as app
 from flask import Blueprint, flash, render_template, redirect, abort, jsonify, request, url_for
 from flask import send_file
 import os
-from werkzeug.utils import secure_filename
+from werkzeug.utils import secure_filename, safe_join
 from zipfile import ZipFile
 import shutil
 
@@ -38,7 +38,7 @@ def _get_req_absolute_path(requested_path):
     """
     #trace('_get_req_absolute_path')
     BASE_DIR = app.config['UPLOAD_FOLDER'] #"./{}/".format(app.config['UPLOAD_FOLDER'])
-    return os.path.join(BASE_DIR, requested_path)
+    return safe_join(BASE_DIR, requested_path)
 
 def _get_resource_tree(req_path):
     """
